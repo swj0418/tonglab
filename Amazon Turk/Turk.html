@@ -1,0 +1,581 @@
+<html>
+<body style="background-color:rgb(128,128,128);margin:0">
+<head></head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://beneposto.pl/jqueryrotate/js/jQueryRotateCompressed.js"></script>
+<script src="http://timbrady.org/turk/ensembleindivdiff/e9/seedrandom.js"></script>
+<script src="https://timbrady.org/turk/TimTurkTools.js"></script>
+
+<style>
+/* Instruction formatting */
+#instructions {
+	margin-top: 30px;
+	max-width: 600px;
+	margin-left: auto;
+	margin-right: auto;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+#fixation {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	z-index: 1;
+	display: none;
+}
+
+.array {
+	position: absolute;
+	display: none;
+}
+
+/* Show trial screen */
+#showTrial {
+	width: 100%;
+	height: 600px;
+	/* border: 1px solid black;  */
+	background: rgb(128,128,128);
+	margin: 40px auto;
+	position: relative;
+	display: none;
+}
+
+/* Continuous report screen */
+#continuousReport {
+	width: 100%;
+	height: 600px;
+	/* border: 1px solid black; */
+	background: rgb(128,128,128);
+	margin: 40px auto;
+	position: relative;
+	display: none;
+}
+
+#continuousStimulus {
+	position: absolute;
+	
+}
+
+#targetSelect {
+	position: absolute;
+}
+
+/*
+#pressKey {
+  position: absolute;
+  width: 600px;
+  top: 135px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+*/
+
+background-position: center center;
+
+}
+*/
+</style>
+
+<script>
+/* Options: */
+/* Display statistics seem to suggest a common screen resolution of 
+1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
+600mm distance from center of screen */
+
+var displayTime = 1000;
+var isiTime = 1000;
+var practiceTrialsPerSS = 2;
+var blockTrialsPerSS = 15;
+var setSize = [1, 2, 4, 8];
+var numSetSize = setSize.length;
+var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
+var randTime = new Date();
+
+/* Seed selection based on current date (randTime.getTime()) */
+Math.seedrandom(randTime.getTime());
+var startWithBars = Math.random()<0.50; 
+
+/* Pregenerated trial arrays */
+var practiceBarTrials = [];
+var practiceGrateTrials = [];
+var barTrials = [];
+var grateTrials = [];
+var totalTrials = [];
+
+/* Pointers for where we are in the experiment: */
+var currentTrial = -1;
+var currentBlock = 0;
+
+/* Default selections for screen size and resolution */
+var horzRes = screen.width;
+var horzLength = 343; // measurements in mm
+var distFromScreen = 600; // measurements in mm
+var centerX = ($(window).width())/2;
+var centerY = ($(window).height())/2;
+
+/* Pixels per visual angle degree and target image dimension calculations */
+var oppLength = horzLength/2;
+var totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
+var pixelsPerDegree = horzRes/totalVisAngle;
+var gaborRadius = Math.floor(pixelsPerDegree);
+var gaborDim = 2 * gaborRadius;
+
+/* Target location within eccentricity values */
+var minAngle_centers = 38;
+var eccenAngle = 4;
+var eccenDist = eccenAngle * pixelsPerDegree;
+
+/* Fixation angle degrees */
+var outCircle = 0.2432;
+var outLine = 0.0541;
+var inCircle = 0.0541;
+
+/* Clears all radio buttons in the instructions */
+/*
+function ClearAll() { 
+	Array.prototype.slice.apply(document.querySelectorAll("input[type='radio']")).map(function(e){ e.checked = false });
+}
+*/
+
+/* Gets viewing distance choice from instructions, sets distFromScreen*/
+function GetSpec() {
+	var vdValue = $('input[name=VD]:checked').val();
+ 	if (vdValue != "0") {
+		distFromScreen = 10 * (36 + (10 * (vdValue)));
+  	}
+  	UpdateElements();
+}
+
+/* Apply new environment conditions to gabor patch dimensions and fixation */
+function UpdateElements() {
+	oppLength = horzLength/2;
+	totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
+	pixelsPerDegree = horzRes/totalVisAngle;
+	gaborRadius = Math.floor(pixelsPerDegree);
+	gaborDim = 2 * gaborRadius;
+	eccenDist = eccenAngle * pixelsPerDegree;
+	$(".gabor").css("width", gaborDim);
+
+	var c = document.getElementById("fixation");
+	c.width = gaborDim;
+	c.height = gaborDim;
+	var ctx = c.getContext("2d");
+	ctx.beginPath();
+	//ctx.arc(gaborRadius,gaborRadius,eccenDist,0,2*Math.PI);
+	ctx.arc(gaborRadius,gaborRadius,outCircle * pixelsPerDegree,0,2*Math.PI);
+	//ctx.lineWidth = outLine * pixelsPerDegree;
+	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.arc(gaborRadius,gaborRadius,inCircle * pixelsPerDegree,0,2*Math.PI);
+	ctx.fill();
+	ctx.stroke();
+
+	$("#fixation").css("margin-top", -gaborRadius);
+	$("#fixation").css("margin-left", -gaborRadius);
+	$("#fixation").show();
+}
+
+/* Normalize random spacing values to sum to available space */
+function randSpacings(nItems, startAngle) {
+	var curSpacings = [];
+	var curCoordinates = [];
+	var availableSpace;
+	var curRandSum = 0;
+			
+	availableSpace = 360 - (minAngle_centers * nItems);
+	for(i = 0; i<nItems; i++) {
+		curSpacings.push(Math.random());
+		curRandSum += curSpacings[i];
+	}
+	curSpacings[0] = startAngle + minAngle_centers + (curSpacings[0]/curRandSum) * availableSpace;
+	for(j = 1; j<nItems; j++) {
+		curSpacings[j] = curSpacings[j - 1] + minAngle_centers + (curSpacings[j]/curRandSum) * availableSpace;
+	}
+	curCoordinates = toCoordinates(curSpacings, nItems);
+	return curCoordinates;
+}
+
+/* Make sure all numbers in an array are between 0 and 360: */
+function wrap(v) {
+  	for (var i=0; i<v.length; i++) {
+    	if (v[i]>360) { v[i]-=360; }
+    	if (v[i]<0) { v[i]+=360; }
+  	}
+  	return v;
+} 
+
+/* Convert spacing angles to x, y coordinates for element placement */
+function toCoordinates(angleSpacings) {
+	var curCoordinates = [];
+	angleSpacings = wrap(angleSpacings);
+	for(i = 0; i<angleSpacings.length; i++) {
+		coordX = Math.floor(Math.cos(convertTo("rads", angleSpacings[i])) * eccenDist) - gaborRadius;
+		coordY = Math.floor(Math.sin(convertTo("rads", angleSpacings[i])) * eccenDist) - gaborRadius;
+		curCoordinates.push({'x': coordX,
+		 					'y': coordY});
+	}
+	return curCoordinates;
+}
+
+/* Generate trials: Seed the random number generator. */
+function GenerateTrials() {
+	var startAngle;
+	var itemOrients = [];
+	var curCoordinates = [];
+	var numTrialsPerSS = numTrialsPerBlock[2]/numSetSize;
+	for (var i=0; i<numSetSize; i++) {
+		for (var j = 0; j<numTrialsPerSS; j++) {
+			startAngle = Math.floor(Math.random()*360);
+		    for (var k=0; k<setSize[i]; k++) {
+		        itemOrients.push(Math.floor(Math.random()*360));
+		    }
+		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    barTrials.push({'startAngle': startAngle,
+		    				'items': itemOrients,
+		    				'randSpacings': curCoordinates, 
+		                    'type': 'bar', 
+		                    'setSize': setSize[i],
+		                    'isPractice': 0});
+		    itemOrients = [];
+		    curCoordinates = [];
+		}
+	}
+	barTrials = Shuffle(barTrials);
+	
+	var numTrialsPerSS = numTrialsPerBlock[3]/numSetSize;
+	for (var i=0; i<numSetSize; i++) {
+		for (var j = 0; j<numTrialsPerSS; j++) {
+			startAngle = Math.floor(Math.random()*360);
+		    for (var k=0; k<setSize[i]; k++) {
+		        itemOrients.push(Math.floor(Math.random()*360));
+		    }
+		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    grateTrials.push({'startAngle': startAngle,
+		    				'items': itemOrients,
+		    				'randSpacings': curCoordinates, 
+		                    'type': 'grate', 
+		                    'setSize': setSize[i],
+		                    'isPractice': 0});
+		    itemOrients = [];
+		    curCoordinates = [];
+		}
+	}
+	grateTrials = Shuffle(grateTrials);
+
+	var numTrialsPerSS = numTrialsPerBlock[0]/numSetSize;
+	for (var i=0; i<numSetSize; i++) {
+		for (var j = 0; j<numTrialsPerSS; j++) {
+			startAngle = Math.floor(Math.random()*360);
+		    for (var k=0; k<setSize[i]; k++) {
+		        itemOrients.push(Math.floor(Math.random()*360));
+		    }
+		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    practiceBarTrials.push({'startAngle': startAngle,
+		    				'items': itemOrients,
+		    				'randSpacings': curCoordinates, 
+		                    'type': 'bar', 
+		                    'setSize': setSize[i],
+		                    'isPractice': 1});
+		    itemOrients = [];
+		    curCoordinates = [];
+		}
+	}
+	practiceBarTrials = Shuffle(practiceBarTrials);
+
+	var numTrialsPerSS = numTrialsPerBlock[1]/numSetSize;
+	for (var i=0; i<numSetSize; i++) {
+		for (var j = 0; j<numTrialsPerSS; j++) {
+			startAngle = Math.floor(Math.random()*360);
+		    for (var k=0; k<setSize[i]; k++) {
+		        itemOrients.push(Math.floor(Math.random()*360));
+		    }
+		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    practiceGrateTrials.push({'startAngle': startAngle,
+		    				'items': itemOrients,
+		    				'randSpacings': curCoordinates, 
+		                    'type': 'grate', 
+		                    'setSize': setSize[i],
+		                    'isPractice': 1});
+		    itemOrients = [];
+		    curCoordinates = [];
+		}
+	}
+	practiceGrateTrials = Shuffle(practiceGrateTrials);
+}
+
+function convertTo($type, $num) {
+    if ($type == "rads") {$result = $num*((Math.PI)/180);}
+	if ($type == "degs") {$result = $num*(180/(Math.PI));}
+    return $result;
+}
+
+/* Start the experiment. Show trials for either bars or gratings first (at random), practice right before testing */
+function StartExperiment() {
+	if (IsOnTurk() && IsTurkPreview()) {
+	  	alert("Please accept the HIT before continuing.");
+	  	return false;
+	}
+	GetSpec();
+	GenerateTrials();
+	if (startWithBars) {
+	  	totalTrials = [practiceBarTrials, barTrials, practiceGrateTrials, grateTrials];
+	} else {
+	    totalTrials = [practiceGrateTrials, grateTrials, practiceBarTrials, barTrials];
+	}
+	$('#instructions').hide();
+	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
+	NextTrial();
+}
+
+/* Show the next trial or show the done screen if they are finished: */
+function NextTrial() {
+	currentTrial++;
+	$('#showTrial').show();
+  	if (currentTrial>=totalTrials[currentBlock].length) {
+    	if (currentBlock==totalTrials.length-1) {
+      	Done();
+      	return;
+    	} else {
+      		currentTrial = 0;
+      		currentBlock++;
+      		if (currentBlock == 1 || currentBlock == 3) {
+        		alert("Okay, time for the real experiment. You won't get feedback about how you are doing anymore. Please do your best!");
+      		}
+    	}
+  	}
+  	SetItems(totalTrials[currentBlock][currentTrial]);
+  	$('#elements').hide();
+  	TrialProgress(totalTrials[currentBlock][currentTrial]);
+}
+
+/* Places targets within an eccentricity with 
+randomized spacing and orientations */
+function SetItems(trialStruct) {
+	for (var i=0; i<trialStruct.setSize; i++) {
+		placeGabor('#item' + (i+1), i, trialStruct);
+		$('#item' + (i+1)).show();
+	}
+}
+
+function placeGabor(item, curTarget, trialStruct) {
+	$(item).css("top", trialStruct.randSpacings[curTarget].y + $("#showTrial").height()/2);
+	$(item).css("left", $(window).width()/2 + trialStruct.randSpacings[curTarget].x);
+	$(item).rotate(trialStruct.items[curTarget]);
+}
+
+function TrialProgress(trialStruct) {
+  	/*
+  	$('#showTrial').show();
+  	if (currentBlock == 0 || currentBlock == 2) {
+   		$('#pressKey').html('<u><font color=navy>Practice for Part ' + (currentBlock+1) + ' of 2</font></u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');
+  	}  else {
+    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');  
+  	}
+  	$('#pressKey').show();
+  	*/
+  	if(currentTrial == 0) {
+  		$(document).bind('click.startTrial', function(e) { 
+	    	$(document).unbind('click.startTrial');
+	    	ShowTrial(trialStruct);
+    	});
+  	} else {
+  		ShowTrial(trialStruct);
+  	}
+}
+
+/* Basic trial structure: Show the stimuli for this trial; 
+  then delay for fixed ISI; then call ShowContinuousReport */
+function ShowTrial(trialStruct) {
+	document.body.style.cursor = 'none';
+   	setTimeout(function() {
+       	$('#elements').show();
+       	setTimeout(function() { 
+           	$('#elements').hide();
+           	setTimeout(function() {
+           		$('#showTrial').hide();
+           		$('.array').hide();
+           		ShowContinuousReport(trialStruct);
+           	}, isiTime);
+       	}, displayTime);
+   	}, 500);
+}
+
+/* Always track the mouse */
+var mouseX, mouseY;
+$(function() {
+  	$(document).bind('mousemove.overall', function(e) {
+    	mouseX = e.pageX;
+    	mouseY = e.pageY;
+    	// console.log(mouseX);
+		// console.log(mouseY);
+  	});
+});
+
+function ReportSelection(trialStruct) {
+	var targetIndex = Math.floor(Math.random() * (trialStruct.setSize));
+	var circMargin = 2;
+	$("#targetSelect").css("width", gaborDim + 2 * circMargin);
+	$("#targetSelect").css("height", gaborDim + 2 * circMargin);
+	$("#targetSelect").css("left", $(window).width()/2 + trialStruct.randSpacings[targetIndex].x - circMargin);
+	$("#targetSelect").css("top", trialStruct.randSpacings[targetIndex].y + $("#showTrial").height()/2 - circMargin);
+
+	var c = document.getElementById("circSelect");
+	c.width = gaborDim + 2 * circMargin;
+	c.height = gaborDim + 2 * circMargin;
+	//c.left = trialStruct.randSpacings[targetIndex].x + circMargin;
+	//c.top = trialStruct.randSpacings[targetIndex].y + circMargin;
+	var ctx = c.getContext("2d");
+
+	ctx.beginPath();
+	ctx.arc(c.width/2,c.height/2,gaborRadius,0,2*Math.PI);
+	//ctx.lineWidth = outLine * pixelsPerDegree;
+	ctx.stroke();
+}
+
+/* Handle continuous report for either bar or grating response by using a single
+   image with jQuery rotation based on mouse coordinate angle */
+function ShowContinuousReport(trialStruct) {
+  	var centerX = $(window).width()/2, centerY = $(window).height()/2;
+  	var angleDeg = 0;
+  	var curError = 360;
+  	var startTime = new Date();
+
+  	document.body.style.cursor = 'default';
+  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
+  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
+
+  	ReportSelection(trialStruct);
+
+	$(document).bind('mousemove.curTrial', function(e) {
+		var initOffset = $('#continuousReport').offset(); 
+	   	var relX = e.pageX - centerX;
+	  	var relY = e.pageY - centerY;
+		var curAngle = Math.atan2(relY,relX);
+		
+		angleDeg = (curAngle / Math.PI * 180.0) + 90;
+	    angleDeg = (angleDeg < 0) ? angleDeg+360:angleDeg;
+	    
+	    $("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
+	    $("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
+		$("#gaborCont").rotate(angleDeg);
+	});
+  
+	$(document).bind('click.curTrial', function(e) {
+		// trialStruct.reportedAngle = Math.round(angleDeg);
+    	// trialStruct.rt = (new Date()) - startTime;
+	    $(document).unbind('click.curTrial');
+	    $(document).unbind('mousemove.curTrial');
+	    $("#continuousReport").hide();
+	    /*
+	    if (trialStruct.isPractice) {
+	    	$('#feedbackError').html("Your error was: " + Math.round(curError) + " deg (aim for less than 20 deg.!)<br><br>Click to continue.");
+	    	var imgNum = Math.round(angleDeg);
+	    	howToSet('#feedbackReported', imgNum);
+	    	imgNum = Math.round(trialStruct.mean);
+	    	howToSet('#feedbackCorrect', imgNum);
+	    	$('#feedback').show();
+	    	$(document).bind('click.feedback', function(e) {
+	        	$('#feedback').hide(); 
+	        	NextTrial();
+	        	$(document).unbind('click.feedback');
+	      	});
+	    } else {
+	    	//NextTrial();
+	    }
+	     */
+     	NextTrial();
+	});
+
+	$("#continuousReport").show();
+	e = $.Event('mousemove');
+	e.pageX = mouseX;
+	e.pageY = mouseY;
+	$(document).trigger(e);
+}
+
+console.log($(window).width());
+console.log($(window).height());
+console.log(screen.width);
+console.log(screen.height);
+</script>
+
+<div id="instructions"><h2>Instructions</h2>
+<p> Testing paragraph display on an <b>HTML</b>.
+<a href="javascript:StartExperiment()" id="startExperiment">Start Experiment</a>
+<!-- <a href="javascript:ClearAll()" id="clearAll">Clear</a> --> <!-- gives ID to clickable --></p>
+<p>Ask for display size</p>
+<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know. (May ask to refresh page as current clearing option affects element sizes).</p>
+
+<input type="radio" name="VD" value="0" checked="checked" style="display:none">
+
+<table align="center">
+    <tr>
+        <td>
+        	<label for="VD18">
+            	<img src="file:///Users/williamju/Desktop/VD18.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+            </label>
+        </td>
+        <td>
+        	<label for="VD22">
+            	<img src="file:///Users/williamju/Desktop/VD22.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+            </label>
+        </td>
+        <td>
+        	<label for="VD26">
+        		<img src="file:///Users/williamju/Desktop/VD26.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+        	</label>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:center">
+            <input type="radio" id="VD18" name="VD" value="1">
+        </td>
+        <td style="text-align:center">
+            <input type="radio" id="VD22" name="VD" value="2">
+        </td>
+        <td style="text-align:center">
+            <input type="radio" id="VD26" name="VD" value="3">
+        </td>
+    </tr>
+</table>
+</div>
+
+<!-- Basic structure for a trial: -->
+<div id="showTrial">
+<div id="elements">
+<div id="item1" class="array"><img id="gaborShow1" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item2" class="array"><img id="gaborShow2" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item3" class="array"><img id="gaborShow3" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item4" class="array"><img id="gaborShow4" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item5" class="array"><img id="gaborShow5" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item6" class="array"><img id="gaborShow6" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item7" class="array"><img id="gaborShow7" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item8" class="array"><img id="gaborShow8" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+</div>
+<!--<div id="pressKey">Click anywhere to start this trial.</div>
+-->
+</div>
+
+<canvas id="fixation">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<!-- Structure for continuous report after the trial: -->
+<div id="continuousReport">
+<div id="continuousStimulus"><img id="gaborCont" src="file:///Users/williamju/Desktop/gaborCont.png" alt="response" class="gabor" width="100"></div>
+<div id="targetSelect"><canvas id="circSelect" width="200" height="200">
+Your browser does not support the HTML5 canvas tag.</canvas></div>
+</div>
+
+<!-- http://lorempixel.com/400/200 -->
+</div>
+</body>
+</html>
