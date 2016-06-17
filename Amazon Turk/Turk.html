@@ -200,8 +200,7 @@ function randSpacings(nItems, startAngle) {
 	for(j = 1; j<nItems; j++) {
 		curSpacings[j] = curSpacings[j - 1] + minAngle_centers + (curSpacings[j]/curRandSum) * availableSpace;
 	}
-	curCoordinates = toCoordinates(curSpacings, nItems);
-	return curCoordinates;
+	return curSpacings;
 }
 
 /* Make sure all numbers in an array are between 0 and 360: */
@@ -230,7 +229,9 @@ function toCoordinates(angleSpacings) {
 function GenerateTrials() {
 	var startAngle;
 	var itemOrients = [];
+	var curAngles = [];
 	var curCoordinates = [];
+	var targetIndex;
 	var numTrialsPerSS = numTrialsPerBlock[2]/numSetSize;
 	for (var i=0; i<numSetSize; i++) {
 		for (var j = 0; j<numTrialsPerSS; j++) {
@@ -238,10 +239,14 @@ function GenerateTrials() {
 		    for (var k=0; k<setSize[i]; k++) {
 		        itemOrients.push(Math.floor(Math.random()*360));
 		    }
-		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    curAngles = randSpacings(setSize[i], startAngle);
+		    curCoordinates = toCoordinates(curAngles);
+		    targetIndex = Math.floor(Math.random() * setSize[i]);
 		    barTrials.push({'startAngle': startAngle,
 		    				'items': itemOrients,
-		    				'randSpacings': curCoordinates, 
+		    				'randAngles': curAngles,
+		    				'randSpacings': curCoordinates,
+		    				'targetIndex': targetIndex, 
 		                    'type': 'bar', 
 		                    'setSize': setSize[i],
 		                    'isPractice': 0});
@@ -258,10 +263,14 @@ function GenerateTrials() {
 		    for (var k=0; k<setSize[i]; k++) {
 		        itemOrients.push(Math.floor(Math.random()*360));
 		    }
-		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    curAngles = randSpacings(setSize[i], startAngle);
+		    curCoordinates = toCoordinates(curAngles, setSize[i]);
+		    targetIndex = Math.floor(Math.random() * setSize[i]);
 		    grateTrials.push({'startAngle': startAngle,
 		    				'items': itemOrients,
-		    				'randSpacings': curCoordinates, 
+		    				'randAngles': curAngles,
+		    				'randSpacings': curCoordinates,
+		    				'targetIndex': targetIndex, 
 		                    'type': 'grate', 
 		                    'setSize': setSize[i],
 		                    'isPractice': 0});
@@ -278,10 +287,14 @@ function GenerateTrials() {
 		    for (var k=0; k<setSize[i]; k++) {
 		        itemOrients.push(Math.floor(Math.random()*360));
 		    }
-		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    curAngles = randSpacings(setSize[i], startAngle);
+		    curCoordinates = toCoordinates(curAngles, setSize[i]);
+		    targetIndex = Math.floor(Math.random() * setSize[i]);
 		    practiceBarTrials.push({'startAngle': startAngle,
 		    				'items': itemOrients,
-		    				'randSpacings': curCoordinates, 
+		    				'randAngles': curAngles,
+		    				'randSpacings': curCoordinates,
+		    				'targetIndex': targetIndex,  
 		                    'type': 'bar', 
 		                    'setSize': setSize[i],
 		                    'isPractice': 1});
@@ -298,10 +311,14 @@ function GenerateTrials() {
 		    for (var k=0; k<setSize[i]; k++) {
 		        itemOrients.push(Math.floor(Math.random()*360));
 		    }
-		    curCoordinates = randSpacings(setSize[i], startAngle);
+		    curAngles = randSpacings(setSize[i], startAngle);
+		    curCoordinates = toCoordinates(curAngles, setSize[i]);
+		    targetIndex = Math.floor(Math.random() * setSize[i]);
 		    practiceGrateTrials.push({'startAngle': startAngle,
 		    				'items': itemOrients,
-		    				'randSpacings': curCoordinates, 
+		    				'randAngles': curAngles,
+		    				'randSpacings': curCoordinates,
+		    				'targetIndex': targetIndex, 
 		                    'type': 'grate', 
 		                    'setSize': setSize[i],
 		                    'isPractice': 1});
@@ -421,7 +438,7 @@ $(function() {
 });
 
 function ReportSelection(trialStruct) {
-	var targetIndex = Math.floor(Math.random() * (trialStruct.setSize));
+	var targetIndex = trialStruct.targetIndex;
 	var circMargin = 2;
 	$("#targetSelect").css("width", gaborDim + 2 * circMargin);
 	$("#targetSelect").css("height", gaborDim + 2 * circMargin);
