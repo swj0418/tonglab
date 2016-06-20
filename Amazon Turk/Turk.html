@@ -138,6 +138,17 @@ var outCircle = 0.2432;
 var outLine = 0.0541;
 var inCircle = 0.0541;
 
+$(window).resize(function() {
+	centerX = $(window).width()/2, centerY = $(window).height()/2;
+  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
+  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
+  	$("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
+	$("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
+  	//$("#fixation").css("top", document.getElementById("fixation").height
+  	SetItems(totalTrials[currentBlock][currentTrial]);
+  	ReportSelection(totalTrials[currentBlock][currentTrial]);
+});
+
 /* Clears all radio buttons in the instructions */
 /*
 function ClearAll() { 
@@ -349,7 +360,8 @@ function StartExperiment() {
 	    totalTrials = [practiceGrateTrials, grateTrials, practiceBarTrials, barTrials];
 	}
 	$('#instructions').hide();
-	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
+	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
+  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
 	NextTrial();
 }
 
@@ -455,20 +467,18 @@ function ReportSelection(trialStruct) {
 	ctx.beginPath();
 	ctx.arc(c.width/2,c.height/2,gaborRadius,0,2*Math.PI);
 	//ctx.lineWidth = outLine * pixelsPerDegree;
+	ctx.strokeStyle = '#FFFFFF';
 	ctx.stroke();
 }
 
 /* Handle continuous report for either bar or grating response by using a single
    image with jQuery rotation based on mouse coordinate angle */
 function ShowContinuousReport(trialStruct) {
-  	var centerX = $(window).width()/2, centerY = $(window).height()/2;
   	var angleDeg = 0;
   	var curError = 360;
   	var startTime = new Date();
 
   	document.body.style.cursor = 'default';
-  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
-  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
 
   	ReportSelection(trialStruct);
 
@@ -478,7 +488,7 @@ function ShowContinuousReport(trialStruct) {
 	  	var relY = e.pageY - centerY;
 		var curAngle = Math.atan2(relY,relX);
 		
-		angleDeg = (curAngle / Math.PI * 180.0) + 90;
+		angleDeg = (curAngle / Math.PI * 180.0);
 	    angleDeg = (angleDeg < 0) ? angleDeg+360:angleDeg;
 	    
 	    $("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
@@ -487,8 +497,8 @@ function ShowContinuousReport(trialStruct) {
 	});
   
 	$(document).bind('click.curTrial', function(e) {
-		// trialStruct.reportedAngle = Math.round(angleDeg);
-    	// trialStruct.rt = (new Date()) - startTime;
+		trialStruct.reportedAngle = Math.round(angleDeg);
+    	trialStruct.rt = (new Date()) - startTime;
 	    $(document).unbind('click.curTrial');
 	    $(document).unbind('mousemove.curTrial');
 	    $("#continuousReport").hide();
