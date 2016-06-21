@@ -1,4 +1,6 @@
 <html>
+<title>TongLab: Turk</title>
+<link rel="icon" type="image/gif" href="http://www.psy.vanderbilt.edu/tonglab/web/images/favicon.gif" />
 <body style="background-color:rgb(128,128,128);margin:0">
 <head></head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
@@ -53,6 +55,7 @@
 
 #continuousStimulus {
 	position: absolute;
+	display: none;
 	
 }
 
@@ -78,10 +81,6 @@
 }
 */
 
-background-position: center center;
-
-}
-*/
 </style>
 
 <script>
@@ -90,17 +89,20 @@ background-position: center center;
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
 600mm distance from center of screen */
 
-var displayTime = 1000;
+var displayTime = 200;
 var isiTime = 1000;
+var preShowTime = 500;
+var reportShowTime = 1000;
 var practiceTrialsPerSS = 2;
 var blockTrialsPerSS = 15;
 var setSize = [1, 2, 4, 8];
 var numSetSize = setSize.length;
 var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
 var randTime = new Date();
+var randSeed = randTime.getTime();
 
 /* Seed selection based on current date (randTime.getTime()) */
-Math.seedrandom(randTime.getTime());
+Math.seedrandom(randSeed);
 var startWithBars = Math.random()<0.50; 
 
 /* Pregenerated trial arrays */
@@ -140,6 +142,8 @@ var inCircle = 0.0541;
 
 $(window).resize(function() {
 	centerX = $(window).width()/2, centerY = $(window).height()/2;
+	$("#continuousReport").css("height", $(window).height() - 100);
+  	$("#showTrial").css("height", $(window).height() - 100);
   	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
   	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
   	$("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
@@ -193,6 +197,16 @@ function UpdateElements() {
 	$("#fixation").css("margin-top", -gaborRadius);
 	$("#fixation").css("margin-left", -gaborRadius);
 	$("#fixation").show();
+}
+
+function ChangeToBar() {
+	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
+	$(".gabor").attr('src', "file:///Users/williamju/Desktop/bar.png");
+}
+
+function ChangeToGabor() {
+	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
+	$(".gabor").attr('src', "file:///Users/williamju/Desktop/gaborCont.png");
 }
 
 /* Normalize random spacing values to sum to available space */
@@ -360,6 +374,8 @@ function StartExperiment() {
 	    totalTrials = [practiceGrateTrials, grateTrials, practiceBarTrials, barTrials];
 	}
 	$('#instructions').hide();
+	$("#continuousReport").css("height", $(window).height() - 100);
+  	$("#showTrial").css("height", $(window).height() - 100);
 	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
   	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
 	NextTrial();
@@ -435,7 +451,7 @@ function ShowTrial(trialStruct) {
            		ShowContinuousReport(trialStruct);
            	}, isiTime);
        	}, displayTime);
-   	}, 500);
+   	}, preShowTime);
 }
 
 /* Always track the mouse */
@@ -482,6 +498,10 @@ function ShowContinuousReport(trialStruct) {
 
   	ReportSelection(trialStruct);
 
+  	setTimeout(function() {
+  		$("#continuousStimulus").show();
+  	}, reportShowTime);
+
 	$(document).bind('mousemove.curTrial', function(e) {
 		var initOffset = $('#continuousReport').offset(); 
 	   	var relX = e.pageX - centerX;
@@ -501,7 +521,16 @@ function ShowContinuousReport(trialStruct) {
     	trialStruct.rt = (new Date()) - startTime;
 	    $(document).unbind('click.curTrial');
 	    $(document).unbind('mousemove.curTrial');
-	    $("#continuousReport").hide();
+	    
+	    var difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
+	    console.log(trialStruct.randAngles[trialStruct.targetIndex]);
+	    console.log(trialStruct.reportedAngle);
+	    console.log(difference);
+	    var oriDiff = Math.abs((difference%180)-90);
+	    console.log(oriDiff);
+	    var percentCorrect = (oriDiff/90) * 100;
+	    console.log(percentCorrect);
+
 	    /*
 	    if (trialStruct.isPractice) {
 	    	$('#feedbackError').html("Your error was: " + Math.round(curError) + " deg (aim for less than 20 deg.!)<br><br>Click to continue.");
@@ -519,6 +548,8 @@ function ShowContinuousReport(trialStruct) {
 	    	//NextTrial();
 	    }
 	     */
+	    $("#continuousStimulus").hide();
+	    $("#continuousReport").hide();
      	NextTrial();
 	});
 
@@ -529,6 +560,64 @@ function ShowContinuousReport(trialStruct) {
 	$(document).trigger(e);
 }
 
+/* Done with the experiment; wait for comments and for them to hit Save */
+function Done() {
+  	// $('#done').show();
+}
+
+/* Save the data to the server (choose what to save) */
+function SaveData() {
+  	var totalTime = (new Date()) - startExpTime;
+  	var newDate = new Date();
+  	$('#assignmentId').val(GetAssignmentId());
+  	var curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " + 
+  	"are on Turk, so you're probably testing. Enter an ID to save your data with:", "id");
+  	d = { 
+	    "curID": curID,
+    	"workerID": GetWorkerId(),
+	    "curTime": newDate.today() + " @ " + newDate.timeNow(),
+    	"userAgent": navigator.userAgent,
+    	"windowWidth": $(window).width(),
+    	"windowHeight": $(window).height(),
+    	"screenWidth": screen.width,
+    	"screenHeight": screen.height,   
+    	"totalTime": totalTime,
+    	"comments": $('#comments').val(),
+    	"birthday": $('#date').val() + "," + $('#month').val() + "," + $('#year').val(),
+    	"trialStruct": trialStruct
+  	};
+  	SendToServer(curID, d);
+}
+
+/* Send the data to the server as JSON: */
+function SendToServer(id, curData) {
+  	var dataToServer = {
+    	'id': id,
+    	'experimentName': 'MonthType',
+    	'curData': JSON.stringify(curData)
+  	}; 
+  	$.post("https://timbrady.org/turk/save.pl",
+    	dataToServer,
+    	function(data) { 
+      		document.forms[0].submit(); 
+    	}
+  	).fail(function(data) { 
+    	document.forms[0].submit(); 
+  	});
+}
+
+/*
+$(window).load(function () {
+  	$('#startExperimentButton').show();
+  	$('#loading').hide();
+});
+
+$(function() {
+  	if (navigator.userAgent.indexOf('MSIE') != -1) {
+    	$('body').html('Unfortunately this HIT does not work in IE. It works in Chrome, Firefox or Safari. Sorry!');
+  	}
+});
+*/
 console.log($(window).width());
 console.log($(window).height());
 console.log(screen.width);
@@ -538,6 +627,8 @@ console.log(screen.height);
 <div id="instructions"><h2>Instructions</h2>
 <p> Testing paragraph display on an <b>HTML</b>.
 <a href="javascript:StartExperiment()" id="startExperiment">Start Experiment</a>
+<a href="javascript:ChangeToBar()" id="ChangetoBar">Change to Bar</a>
+<a href="javascript:ChangeToGabor()" id="ChangetoGabor">Change to Gabor</a>
 <!-- <a href="javascript:ClearAll()" id="clearAll">Clear</a> --> <!-- gives ID to clickable --></p>
 <p>Ask for display size</p>
 <p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know. (May ask to refresh page as current clearing option affects element sizes).</p>
@@ -575,6 +666,12 @@ console.log(screen.height);
     </tr>
 </table>
 </div>
+
+<!-- Screen for collecting comments when they are done:
+<div id="done"><div id="doneText">Done! Thanks!<br><br>Any comments for us? (Was it fun? Any technical difficulties?)<br><br>
+<textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
+<a href="javascript:SaveData()" id="timSubmit">Submit</a>
+</div><div id="saving">Saving . . .</div></div> -->
 
 <!-- Basic structure for a trial: -->
 <div id="showTrial">
