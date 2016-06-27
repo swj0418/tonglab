@@ -189,9 +189,10 @@ function GetSpec() {
 }
 
 function GetHorzLength(screenSize) {
-	console.log(Math.atan(9/16));
-	console.log(Math.cos(Math.atan(9/16)));
-	var horizontal = screenSize * inchTomm * Math.cos(Math.atan(9/16));
+	console.log(screen.height/screen.width);
+	console.log(Math.atan(screen.height/screen.width));
+	console.log(Math.cos(Math.atan(screen.height/screen.width)));
+	var horizontal = screenSize * inchTomm * Math.cos(Math.atan(screen.height/screen.width));
 	console.log(horizontal);
 	return horizontal;
 }
