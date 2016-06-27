@@ -140,6 +140,9 @@ var outCircle = 0.2432;
 var outLine = 0.0541;
 var inCircle = 0.0541;
 
+/* Unit conversions */
+var inchTomm = 25.4;
+
 $(window).resize(function() {
 	centerX = $(window).width()/2, centerY = $(window).height()/2;
 	$("#continuousReport").css("height", $(window).height() - 100);
@@ -160,13 +163,37 @@ function ClearAll() {
 }
 */
 
+function ChangeRadioOther() {
+	var other= document.getElementById("SSother");
+	other.value=document.getElementById("inputother").value;
+}
+
+function isNumber(n) {
+	return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
 /* Gets viewing distance choice from instructions, sets distFromScreen*/
 function GetSpec() {
 	var vdValue = $('input[name=VD]:checked').val();
  	if (vdValue != "0") {
 		distFromScreen = 10 * (36 + (10 * (vdValue)));
   	}
+  	ChangeRadioOther();
+  	var ssValue = $('input[name=SS]:checked').val();
+  	console.log(ssValue);
+  	console.log(isNumber(ssValue));
+  	if (isNumber(ssValue)) {
+  		horzLength = Math.floor(GetHorzLength(ssValue));
+  	}
   	UpdateElements();
+}
+
+function GetHorzLength(screenSize) {
+	console.log(Math.atan(9/16));
+	console.log(Math.cos(Math.atan(9/16)));
+	var horizontal = screenSize * inchTomm * Math.cos(Math.atan(9/16));
+	console.log(horizontal);
+	return horizontal;
 }
 
 /* Apply new environment conditions to gabor patch dimensions and fixation */
@@ -201,12 +228,12 @@ function UpdateElements() {
 
 function ChangeToBar() {
 	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
-	$(".gabor").attr('src', "file:///Users/williamju/Desktop/bar.png");
+	$(".gabor").attr('src', "file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/bar.png");
 }
 
 function ChangeToGabor() {
 	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
-	$(".gabor").attr('src', "file:///Users/williamju/Desktop/gaborCont.png");
+	$(".gabor").attr('src', "file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png");
 }
 
 /* Normalize random spacing values to sum to available space */
@@ -630,7 +657,17 @@ console.log(screen.height);
 <a href="javascript:ChangeToBar()" id="ChangetoBar">Change to Bar</a>
 <a href="javascript:ChangeToGabor()" id="ChangetoGabor">Change to Gabor</a>
 <!-- <a href="javascript:ClearAll()" id="clearAll">Clear</a> --> <!-- gives ID to clickable --></p>
-<p>Ask for display size</p>
+<p>Please choose your screen size (in inches) from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers (May ask to refresh page as current clearing option affects element sizes).</p>
+
+<input type="radio" name="SS" value="0" checked="checked" style="display:none">
+
+<input type="radio" id="SS11" name="SS" value="11">11<br>
+<input type="radio" id="SS13" name="SS" value="13">13<br>
+<input type="radio" id="SS15" name="SS" value="15">15<br>
+<input type="radio" id="SS21" name="SS" value="21">21<br>
+<input type="radio" id="SS23" name="SS" value="23">23<br>
+<input type="radio" id="SSother" name="SS" value="other">Other
+<input id="inputother" type="text" onchange="ChangeRadioOther()"/>
 <p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know. (May ask to refresh page as current clearing option affects element sizes).</p>
 
 <input type="radio" name="VD" value="0" checked="checked" style="display:none">
@@ -639,17 +676,17 @@ console.log(screen.height);
     <tr>
         <td>
         	<label for="VD18">
-            	<img src="file:///Users/williamju/Desktop/VD18.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+            	<img src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/VD18.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
             </label>
         </td>
         <td>
         	<label for="VD22">
-            	<img src="file:///Users/williamju/Desktop/VD22.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+            	<img src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/VD22.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
             </label>
         </td>
         <td>
         	<label for="VD26">
-        		<img src="file:///Users/williamju/Desktop/VD26.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+        		<img src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/VD26.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
         	</label>
         </td>
     </tr>
@@ -665,6 +702,7 @@ console.log(screen.height);
         </td>
     </tr>
 </table>
+
 </div>
 
 <!-- Screen for collecting comments when they are done:
@@ -676,14 +714,14 @@ console.log(screen.height);
 <!-- Basic structure for a trial: -->
 <div id="showTrial">
 <div id="elements">
-<div id="item1" class="array"><img id="gaborShow1" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item2" class="array"><img id="gaborShow2" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item3" class="array"><img id="gaborShow3" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item4" class="array"><img id="gaborShow4" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item5" class="array"><img id="gaborShow5" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item6" class="array"><img id="gaborShow6" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item7" class="array"><img id="gaborShow7" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
-<div id="item8" class="array"><img id="gaborShow8" src="file:///Users/williamju/Desktop/gaborCont.png" class="gabor" width="100"></div>
+<div id="item1" class="array"><img id="gaborShow1" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item2" class="array"><img id="gaborShow2" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item3" class="array"><img id="gaborShow3" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item4" class="array"><img id="gaborShow4" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item5" class="array"><img id="gaborShow5" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item6" class="array"><img id="gaborShow6" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item7" class="array"><img id="gaborShow7" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
+<div id="item8" class="array"><img id="gaborShow8" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" class="gabor" width="100"></div>
 </div>
 <!--<div id="pressKey">Click anywhere to start this trial.</div>
 -->
@@ -694,7 +732,7 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 
 <!-- Structure for continuous report after the trial: -->
 <div id="continuousReport">
-<div id="continuousStimulus"><img id="gaborCont" src="file:///Users/williamju/Desktop/gaborCont.png" alt="response" class="gabor" width="100"></div>
+<div id="continuousStimulus"><img id="gaborCont" src="file:///Users/williamju/Developer/TongLab/Amazon Turk/generic-jspsych-psiturk-experiment/static/images/gaborCont.png" alt="response" class="gabor" width="100"></div>
 <div id="targetSelect"><canvas id="circSelect" width="200" height="200">
 Your browser does not support the HTML5 canvas tag.</canvas></div>
 </div>
