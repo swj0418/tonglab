@@ -89,6 +89,7 @@ Math.seedrandom(randSeed);
 var startWithBars = Math.random()<0.50; 
 
 /* Pregenerated trial arrays */
+var conditions;
 var practiceBarTrials = [];
 var practiceGrateTrials = [];
 var barTrials = [];
@@ -235,13 +236,10 @@ function ChangeToGabor() {
 }
 
 function ReadConditions() {
-	console.log("Hello");
 	var request = new XMLHttpRequest();
-	console.log(request);
 	request.onreadystatechange = function() {
 		if((request.readyState === 4) && (request.status === 200)) {
-			console.log(request);
-			document.writeline(request.responseText);
+			conditions = request.responseText;
 		}
 	}
 	request.open('GET', 'data.txt', true);
