@@ -77,7 +77,8 @@ var preShowTime = 500;
 var reportShowTime = 1000;
 var practiceTrialsPerSS = 1;
 var blockTrialsPerSS = 1;
-var setSize = [1, 2, 4, 8];
+var numTrials = 40;
+var setSize = [1, 2, 3, 6];
 var numSetSize = setSize.length;
 var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
 var randTime = new Date();
@@ -90,10 +91,13 @@ var startWithBars = Math.random()<0.50;
 
 /* Pregenerated trial arrays */
 var conditions;
+/*
 var practiceBarTrials = [];
 var practiceGrateTrials = [];
 var barTrials = [];
 var grateTrials = [];
+*/
+var genTrials = [];
 var totalTrials = [];
 
 /* Pointers for where we are in the experiment: */
@@ -227,7 +231,6 @@ function DrawFixation(element) {
 function ChangeToBar() {
 	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
 	$(".gabor").attr('src', "static/images/bar.png");
-	ReadConditions();
 }
 
 function ChangeToGabor() {
@@ -239,14 +242,51 @@ function ReadConditions() {
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = function() {
 		if((request.readyState === 4) && (request.status === 200)) {
-			conditions = request.responseText;
+			return request.responseText;
 		}
 	}
 	request.open('GET', 'data.txt', true);
 	request.send();
 }
 
+function ProcessConditions() {
+	var displayID;
+	var stimtype;
+	var setsize;
+	var target;
+	var itemOrients = [];
+	var curAngles = [];
+	var curCoordinates = [];
+
+	conditions = ReadConditions();
+	conditionStream = conditions.split(/\s+/);
+	numValuesPerTrial = (conditionStream.length - 1)/numTrials;
+	for (var i = 0; i < numTrials; i++) {
+		displayID = conditionStream[i * numValuesPerTrial];
+		stimtype = conditionStream[i * numValuesPerTrial + 1];
+		setsize = conditionStream[i * numValuesPerTrial + 2];
+		target = conditionStream[i * numValuesPerTrial + 3];
+		for (var j = 0; j < setsize; j++) {
+			itemOrients[j] = conditionStream[j + 4];
+			curAngles[j] = conditionStream[j + 10];
+		}
+		curCoordinates = toCoordinates(curAngles);
+		genTrials.push({'displayID': displayID, 
+		                'stimtype': stimtype, 
+		                'setSize': setsize,
+						'targetIndex': target,
+						'items': itemOrients,
+						'randAngles': curAngles,
+						'randSpacings': curCoordinates});
+		itemOrients = [];
+		curAngles = [];
+		curCoordinates = [];
+	}
+}
+
+
 /* Normalize random spacing values to sum to available space */
+/*
 function randSpacings(nItems, startAngle) {
 	var curSpacings = [];
 	var curCoordinates = [];
@@ -264,6 +304,7 @@ function randSpacings(nItems, startAngle) {
 	}
 	return curSpacings;
 }
+*/
 
 /* Make sure all numbers in an array are between 0 and 360: */
 function wrap(v) {
@@ -288,6 +329,7 @@ function toCoordinates(angleSpacings) {
 }
 
 /* Generate trials: Seed the random number generator. */
+/*
 function GenerateTrials() {
 	var startAngle;
 	var itemOrients = [];
@@ -390,6 +432,7 @@ function GenerateTrials() {
 	}
 	practiceGrateTrials = Shuffle(practiceGrateTrials);
 }
+*/
 
 function convertTo($type, $num) {
     if ($type == "rads") {$result = $num*((Math.PI)/180);}
@@ -405,12 +448,16 @@ function StartExperiment() {
 	  	return false;
 	}
 	GetSpec();
-	GenerateTrials();
+	// GenerateTrials();
+	ProcessConditions();
+	totalTrials = [genTrials];
+	/*
 	if (startWithBars) {
 	  	totalTrials = [practiceBarTrials, barTrials, practiceGrateTrials, grateTrials];
 	} else {
 	    totalTrials = [practiceGrateTrials, grateTrials, practiceBarTrials, barTrials];
 	}
+	*/
 	$('#instructions').hide();
 	$("#continuousReport").height($(window).height());
   	$("#showTrial").height($(window).height());
@@ -443,6 +490,12 @@ function NextTrial() {
 /* Places targets within an eccentricity with 
 randomized spacing and orientations */
 function SetItems(trialStruct) {
+	if (trialStruct.stimtype == 1) {
+		ChangeToBar();
+	}
+	if (trialStruct.stimtype == 2) {
+		ChangeToGabor();
+	}
 	for (var i=0; i<trialStruct.setSize; i++) {
 		placeGabor('#item' + (i+1), i, trialStruct);
 		$('#item' + (i+1)).show();
