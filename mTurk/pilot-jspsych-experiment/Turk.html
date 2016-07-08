@@ -226,11 +226,26 @@ function DrawFixation(element) {
 function ChangeToBar() {
 	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
 	$(".gabor").attr('src', "static/images/bar.png");
+	ReadConditions();
 }
 
 function ChangeToGabor() {
 	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
 	$(".gabor").attr('src', "static/images/gaborCont.png");
+}
+
+function ReadConditions() {
+	console.log("Hello");
+	var request = new XMLHttpRequest();
+	console.log(request);
+	request.onreadystatechange = function() {
+		if((request.readyState === 4) && (request.status === 200)) {
+			console.log(request);
+			document.writeline(request.responseText);
+		}
+	}
+	request.open('GET', 'data.txt', true);
+	request.send();
 }
 
 /* Normalize random spacing values to sum to available space */
