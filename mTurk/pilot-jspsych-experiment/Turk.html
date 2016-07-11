@@ -66,6 +66,7 @@
 </style>
 
 <script>
+console.log("Version 1.0.0");
 /* Options: */
 /* Display statistics seem to suggest a common screen resolution of 
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
@@ -205,11 +206,11 @@ function UpdateElements() {
 
 function AdjustElements(trialStruct) {
 	for (var i=0; i<trialStruct.setSize; i++) {
-		$('#item' + (i+1)).css("top", trialStruct.randSpacings[i].y + $("#showTrial").height()/2);
+		$('#item' + (i+1)).css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[i].y - gaborDim);
 		$('#item' + (i+1)).css("left", $(window).width()/2 + trialStruct.randSpacings[i].x);
 	}
 	$("#targetSelect").css("left", $(window).width()/2 + trialStruct.randSpacings[trialStruct.targetIndex].x - circMargin);
-	$("#targetSelect").css("top", trialStruct.randSpacings[trialStruct.targetIndex].y + $("#showTrial").height()/2 - circMargin);
+	$("#targetSelect").css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[trialStruct.targetIndex].y - gaborDim - circMargin);
 }
 
 function DrawFixation(element) {
@@ -242,10 +243,10 @@ function ReadConditions() {
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = function() {
 		if((request.readyState === 4) && (request.status === 200)) {
-			return request.responseText;
+			conditions = request.responseText;
 		}
 	}
-	request.open('GET', 'data.txt', true);
+	request.open('GET', 'conditions/data.txt', true);
 	request.send();
 }
 
@@ -258,17 +259,17 @@ function ProcessConditions() {
 	var curAngles = [];
 	var curCoordinates = [];
 
-	conditions = ReadConditions();
+	ReadConditions();
 	conditionStream = conditions.split(/\s+/);
 	numValuesPerTrial = (conditionStream.length - 1)/numTrials;
 	for (var i = 0; i < numTrials; i++) {
-		displayID = conditionStream[i * numValuesPerTrial];
-		stimtype = conditionStream[i * numValuesPerTrial + 1];
-		setsize = conditionStream[i * numValuesPerTrial + 2];
-		target = conditionStream[i * numValuesPerTrial + 3];
+		displayID = parseFloat(conditionStream[i * numValuesPerTrial]);
+		stimtype = parseFloat(conditionStream[i * numValuesPerTrial + 1]);
+		setsize = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
+		target = parseFloat(conditionStream[i * numValuesPerTrial + 3]) - 1;
 		for (var j = 0; j < setsize; j++) {
-			itemOrients[j] = conditionStream[j + 4];
-			curAngles[j] = conditionStream[j + 10];
+			itemOrients[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 4]);
+			curAngles[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 10]);
 		}
 		curCoordinates = toCoordinates(curAngles);
 		genTrials.push({'displayID': displayID, 
@@ -443,10 +444,12 @@ function convertTo($type, $num) {
 /* Start the experiment. Show trials for either bars or gratings first (at random), practice right before testing */
 function StartExperiment() {
 	startExpTime = new Date();
+	/*
 	if (IsOnTurk() && IsTurkPreview()) {
 	  	alert("Please accept the HIT before continuing.");
 	  	return false;
 	}
+	*/
 	GetSpec();
 	// GenerateTrials();
 	ProcessConditions();
@@ -502,10 +505,14 @@ function SetItems(trialStruct) {
 	}
 }
 
+function ccwRotate(radians, item) {
+	$(item).rotate(-radians);
+}
+
 function placeGabor(item, curTarget, trialStruct) {
-	$(item).css("top", trialStruct.randSpacings[curTarget].y + $("#showTrial").height()/2);
+	$(item).css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[curTarget].y - gaborDim);
 	$(item).css("left", $(window).width()/2 + trialStruct.randSpacings[curTarget].x);
-	$(item).rotate(trialStruct.items[curTarget]);
+	ccwRotate(trialStruct.items[curTarget], item);
 }
 
 function TrialProgress(trialStruct) {
@@ -558,10 +565,12 @@ $(function() {
 
 function ReportSelection(trialStruct) {
 	var targetIndex = trialStruct.targetIndex;
+	console.log(targetIndex);
+	console.log(trialStruct.randSpacings[targetIndex]);
 	$("#targetSelect").width(gaborDim + 2 * circMargin);
 	$("#targetSelect").height(gaborDim + 2 * circMargin);
 	$("#targetSelect").css("left", $(window).width()/2 + trialStruct.randSpacings[targetIndex].x - circMargin);
-	$("#targetSelect").css("top", trialStruct.randSpacings[targetIndex].y + $("#showTrial").height()/2 - circMargin);
+	$("#targetSelect").css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[targetIndex].y - gaborDim - circMargin);
 
 	var c = document.getElementById("circSelect");
 	c.width = gaborDim + 2 * circMargin;
@@ -591,6 +600,39 @@ function ShowContinuousReport(trialStruct) {
   	setTimeout(function() {
   		document.body.style.cursor = 'auto';
   		$("#continuousStimulus").show();
+  		$(document).bind('click.curTrial', function(e) {
+			var answer = wrap(360 - (angleDeg + randAdj));
+			trialStruct.reportedAngle = Math.round(answer);
+	    	trialStruct.rt = (new Date()) - startTime;
+		    $(document).unbind('click.curTrial');
+		    $(document).unbind('mousemove.curTrial');
+		    
+		    var difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
+		    var oriDiff = Math.abs((difference%180)-90);
+		    var percentCorrect = (oriDiff/90) * 100;
+		    console.log(percentCorrect);
+
+		    /*
+		    if (trialStruct.isPractice) {
+		    	$('#feedbackError').html("Your error was: " + Math.round(curError) + " deg (aim for less than 20 deg.!)<br><br>Click to continue.");
+		    	var imgNum = Math.round(angleDeg);
+		    	howToSet('#feedbackReported', imgNum);
+		    	imgNum = Math.round(trialStruct.mean);
+		    	howToSet('#feedbackCorrect', imgNum);
+		    	$('#feedback').show();
+		    	$(document).bind('click.feedback', function(e) {
+		        	$('#feedback').hide(); 
+		        	NextTrial();
+		        	$(document).unbind('click.feedback');
+		      	});
+		    } else {
+		    	//NextTrial();
+		    }
+		     */
+		    $("#continuousStimulus").hide();
+		    $("#continuousReport").hide();
+	     	NextTrial();
+		});
   	}, reportShowTime);
 
 	$(document).bind('mousemove.curTrial', function(e) {
@@ -605,40 +647,6 @@ function ShowContinuousReport(trialStruct) {
 	    $("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
 	    $("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
 		$("#gaborCont").rotate(angleDeg + randAdj);
-	});
-  
-	$(document).bind('click.curTrial', function(e) {
-		var answer = wrap(angleDeg + randAdj);
-		trialStruct.reportedAngle = Math.round(answer);
-    	trialStruct.rt = (new Date()) - startTime;
-	    $(document).unbind('click.curTrial');
-	    $(document).unbind('mousemove.curTrial');
-	    
-	    var difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
-	    var oriDiff = Math.abs((difference%180)-90);
-	    var percentCorrect = (oriDiff/90) * 100;
-	    console.log(percentCorrect);
-
-	    /*
-	    if (trialStruct.isPractice) {
-	    	$('#feedbackError').html("Your error was: " + Math.round(curError) + " deg (aim for less than 20 deg.!)<br><br>Click to continue.");
-	    	var imgNum = Math.round(angleDeg);
-	    	howToSet('#feedbackReported', imgNum);
-	    	imgNum = Math.round(trialStruct.mean);
-	    	howToSet('#feedbackCorrect', imgNum);
-	    	$('#feedback').show();
-	    	$(document).bind('click.feedback', function(e) {
-	        	$('#feedback').hide(); 
-	        	NextTrial();
-	        	$(document).unbind('click.feedback');
-	      	});
-	    } else {
-	    	//NextTrial();
-	    }
-	     */
-	    $("#continuousStimulus").hide();
-	    $("#continuousReport").hide();
-     	NextTrial();
 	});
 
 	$("#continuousReport").show();
@@ -682,17 +690,12 @@ function SaveData() {
 function SendToServer(id, curData) {
   	var dataToServer = {
     	'id': id,
-    	'experimentName': 'generic',
+    	'experimentName': 'pilot',
     	'curData': JSON.stringify(curData)
   	}; 
-  	$.post("https://mturk.psy.vanderbilt.edu/TongLab/mTurk/save.pl",
-    	dataToServer,
-    	function(data) { 
-      		document.forms[0].submit(); 
-    	}
-  	).fail(function(data) { 
-    	document.forms[0].submit(); 
-  	});
+  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/save.pl",
+    	dataToServer
+	);
 }
 
 /*
@@ -722,7 +725,7 @@ console.log(screen.height);
 <!-- <a href="javascript:ClearAll()" id="clearAll">Clear</a> --> <!-- gives ID to clickable --></p>
 <p>Please choose your screen size (in inches) from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers (May ask to refresh page as current clearing option affects element sizes).</p>
 
-<input type="radio" name="SS" value="0" checked="checked" style="display:none">
+<input type="radio" name="SS" value="15" checked="checked" style="display:none">
 
 <input type="radio" id="SS11" name="SS" value="11">11<br>
 <input type="radio" id="SS13" name="SS" value="13">13<br>
