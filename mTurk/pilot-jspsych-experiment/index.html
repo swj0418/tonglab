@@ -4,31 +4,18 @@
 <body style="background-color:rgb(128,128,128);margin:0">
 <head></head>
 <script src="static/lib/jquery-3.0.0.min.js"></script>
-<script type="text/javascript" src="static/lib/jQueryRotate.js"></script>
+<script src="static/lib/jQueryRotate.js"></script>
 <script src="static/lib/seedrandom.js"></script>
 <script src="static/lib/TimTurkTools.js"></script>
 <script src="static/js/utils.js"></script>
+<link rel="stylesheet" type="text/css" href="static/css/experiment.css">
 
 <style>
-/* Instruction formatting */
-#instructions {
-	margin-top: 30px;
-	max-width: 600px;
-	margin-left: auto;
-	margin-right: auto;
-	font-family: Arial, Helvetica, sans-serif;
-}
-
 .fixation {
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	z-index: 1;
-	display: none;
-}
-
-.array {
-	position: absolute;
 	display: none;
 }
 
@@ -41,6 +28,26 @@
 	margin: 40px auto;
 	position: relative;
 	display: none;
+}
+
+.array {
+	position: absolute;
+	display: none;
+}
+
+#pressKey {
+	position: absolute;
+	width: 100%;
+	top: 135px;
+	text-align: center;
+	font-size: 20px;
+	font-weight: bold;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 /* Continuous report screen */
@@ -139,11 +146,11 @@ $(window).resize(function() {
 });
 
 /* Clears all radio buttons in the instructions */
-/*
 function ClearAll() { 
 	Array.prototype.slice.apply(document.querySelectorAll("input[type='radio']")).map(function(e){ e.checked = false });
+	$("#screenSize").prop('checked', true);
+	$("#viewingDistance").prop('checked', true);
 }
-*/
 
 function ChangeRadioOther() {
 	var other= document.getElementById("SSother");
@@ -230,6 +237,7 @@ function ReadConditions() {
 	request.onreadystatechange = function() {
 		if((request.readyState === 4) && (request.status === 200)) {
 			conditions = request.responseText;
+			ProcessConditions();
 		}
 	}
 	request.open('GET', 'conditions/data.txt', true);
@@ -245,7 +253,6 @@ function ProcessConditions() {
 	var curAngles = [];
 	var curCoordinates = [];
 
-	ReadConditions();
 	conditionStream = conditions.split(/\s+/);
 	numValuesPerTrial = (conditionStream.length - 1)/numTrials;
 	for (var i = 0; i < numTrials; i++) {
@@ -264,7 +271,8 @@ function ProcessConditions() {
 						'targetIndex': target,
 						'items': itemOrients,
 						'randAngles': curAngles,
-						'randSpacings': curCoordinates});
+						'randSpacings': curCoordinates,
+			            'isPractice': 0});
 		itemOrients = [];
 		curAngles = [];
 		curCoordinates = [];
@@ -347,8 +355,8 @@ function StartExperiment() {
 	*/
 	GetSpec();
 	GenerateTrials();
-	ProcessConditions();
-	totalTrials = [practiceTrials genTrials];
+	ReadConditions();
+	totalTrials = [practiceTrials, genTrials];
 	$('#instructions').hide();
 	$("#continuousReport").height($(window).height());
   	$("#showTrial").height($(window).height());
@@ -368,7 +376,7 @@ function NextTrial() {
     	} else {
       		currentTrial = 0;
       		currentBlock++;
-      		if (currentBlock == 1 || currentBlock == 3) {
+      		if (currentBlock == 1) {
         		alert("Okay, time for the real experiment. You won't get feedback about how you are doing anymore. Please do your best!");
       		}
     	}
@@ -405,17 +413,17 @@ function placeGabor(item, curTarget, trialStruct) {
 
 function TrialProgress(trialStruct) {
   	/*
-  	$('#showTrial').show();
-  	if (currentBlock == 0 || currentBlock == 2) {
+  	if (currentBlock == 1) {
    		$('#pressKey').html('<u><font color=navy>Practice for Part ' + (currentBlock+1) + ' of 2</font></u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');
   	}  else {
-    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');  
+    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Press space to start this trial.');  
   	}
   	$('#pressKey').show();
   	*/
+
   	if(currentTrial == 0) {
-  		$(document).bind('click.startTrial', function(e) { 
-	    	$(document).unbind('click.startTrial');
+  		$(document).bind('keyup.startTrial', 'space', function(e) { 
+	    	$(document).unbind('keyup.startTrial');
 	    	ShowTrial(trialStruct);
     	});
   	} else {
@@ -483,11 +491,11 @@ function ShowContinuousReport(trialStruct) {
   	setTimeout(function() {
   		document.body.style.cursor = 'auto';
   		$("#continuousStimulus").show();
-  		$(document).bind('click.curTrial', function(e) {
+  		$(document).bind('keyup.curTrial', 'space', function(e) {
 			var answer = wrap(360 - (angleDeg + randAdj));
 			trialStruct.reportedAngle = Math.round(answer);
 	    	trialStruct.rt = (new Date()) - startTime;
-		    $(document).unbind('click.curTrial');
+		    $(document).unbind('keyup.curTrial');
 		    $(document).unbind('mousemove.curTrial');
 		    
 		    var difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
@@ -541,8 +549,7 @@ function ShowContinuousReport(trialStruct) {
 
 /* Done with the experiment; wait for comments and for them to hit Save */
 function Done() {
-  	// $('#done').show();
-  	SaveData();
+  	$('#done').show();
 }
 
 /* Save the data to the server (choose what to save) */
@@ -581,13 +588,10 @@ function SendToServer(id, curData) {
 	);
 }
 
-/*
 $(window).load(function () {
-	ReadConditions();
   	$('#startExperimentButton').show();
   	$('#loading').hide();
 });
-*/
 
 $(function() {
   	if (navigator.userAgent.indexOf('MSIE') != -1) {
@@ -603,13 +607,11 @@ console.log(screen.height);
 
 <div id="instructions"><h2>Instructions</h2>
 <p> Testing paragraph display on an <b>HTML</b>.
-<a href="javascript:StartExperiment()" id="startExperiment">Start Experiment</a>
-<a href="javascript:ChangeToBar()" id="ChangetoBar">Change to Bar</a>
-<a href="javascript:ChangeToGabor()" id="ChangetoGabor">Change to Gabor</a>
-<!-- <a href="javascript:ClearAll()" id="clearAll">Clear</a> --> <!-- gives ID to clickable --></p>
-<p>Please choose your screen size (in inches) from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers (May ask to refresh page as current clearing option affects element sizes).</p>
+<a href="javascript:ClearAll()" id="clearAll">Clear All</a>
 
-<input type="radio" name="SS" value="15" checked="checked" style="display:none">
+<p>Please choose your screen size (in inches) from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers.</p>
+
+<input id="screenSize" type="radio" name="SS" value="15.6" checked="checked" style="display:none">
 
 <input type="radio" id="SS11" name="SS" value="11">11<br>
 <input type="radio" id="SS13" name="SS" value="13">13<br>
@@ -618,9 +620,9 @@ console.log(screen.height);
 <input type="radio" id="SS23" name="SS" value="23">23<br>
 <input type="radio" id="SSother" name="SS" value="other">Other
 <input id="inputother" type="text" onchange="ChangeRadioOther()"/>
-<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know. (May ask to refresh page as current clearing option affects element sizes).</p>
+<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
 
-<input type="radio" name="VD" value="0" checked="checked" style="display:none">
+<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
 
 <table align="center">
     <tr>
@@ -653,13 +655,30 @@ console.log(screen.height);
     </tr>
 </table>
 
+<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton'>Start Experiment</a><span id="loading">Images still loading. Please wait. &nbsp; &nbsp; <img src="static/images/spinner.gif" style="width: 30px; height: 30px"></span></p>
+
+<!-- Consent statement at bottom: -->
+<div id='consentDiv'><p><u>Consent to Participate in Research:</u></p><p>By answering the following questions, you are participating in a study being performed by cognitive scientists in the Vanderbilt University Psychology Department.  The purpose of this research is to examine human visual performance.</p><p>By participating you are confirming that you are over 18 years of age and have normal or corrected-to-normal vision.</p><p>If you have questions about this research, or if you would like to receive a report of this research when it is completed please contact William Ju at william.h.ju@vanderbilt.edu.</p><p>Your participation in this research is completely voluntary.  If you choose to participate, you may change your mind and leave the study at any time.  Refusal to participate or stopping your participation will involve no penalty or loss of benefits to which you are otherwise entitled.</p><p>You may decline to answer any or all of the following questions. Your anonymity is assured; the researchers who have requested your participation will not receive any personal information about you. </p><p>For questions, concerns, or complaints that are not being addressed by the researcher, or research-related harm contact:  Committee on the Use of Human Subjects in Research at Harvard University, 1414 Massachusetts Avenue, Second Floor, Cambridge, MA  02138. Phone: 617-496-CUHS (2847).  Email: cuhs@fas.harvard.edu</p><p>By continuing, you are confirming that you understand these instructions and conditions of participation.</p></div>
 </div>
 
-<!-- Screen for collecting comments when they are done:
+</div>
+
+<!-- Start form here to capture comments -->
+<!--
+<form id="turkSubmit" action="https://www.mturk.com/mturk/externalSubmit" method="get">
+<input type="hidden" name="assignmentId" id="assignmentId" value="">
+<input type="hidden" name="assignmentId" id="assignmentId" value="">
+<input type="submit" value="Submit" name="submitButton" id="submitButton" style="display: none">
+ submit to turk
+ https://workersandbox.mturk.com/mturk/externalSubmit
+https://www.mturk.com/mturk/externalSubmit
+-->
+
+<!-- Screen for collecting comments when they are done: -->
 <div id="done"><div id="doneText">Done! Thanks!<br><br>Any comments for us? (Was it fun? Any technical difficulties?)<br><br>
 <textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
 <a href="javascript:SaveData()" id="timSubmit">Submit</a>
-</div><div id="saving">Saving . . .</div></div> -->
+</div><div id="saving">Saving . . .</div></div>
 
 <!-- Basic structure for a trial: -->
 <div id="showTrial">
