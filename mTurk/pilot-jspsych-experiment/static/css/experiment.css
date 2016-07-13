@@ -6,7 +6,7 @@ body {
   display: inline-block;
   color: black; 
   border: 3px outset gray; 
-  background-color: #CCCCCC; 
+  background-color: darkgray; 
   padding: 8px; 
   text-decoration: none; 
   font-family: Arial, Helvetica; 
@@ -26,8 +26,8 @@ body {
 }
 
 #loading {
-  font-size: 14pt;
-  font-style: italic;
+  font-size: 10pt;
+  font-style: bold;
 }
 
 #consentDiv {
@@ -35,13 +35,18 @@ body {
   font-family: Arial, Helvetica; 
   padding:10px; 
   border:1px dashed black; 
-  background-color: #FFFFFF;
+  background-color: white;
   max-width: 600px; 
   margin: 0 auto; 
   margin-top: 30px;
 }
 
 #instructions {
+  /*
+  padding:20px; 
+  border:1px dashed black; 
+  background-color: lightgray;
+  */
   max-width: 600px; 
   margin: 0 auto; 
   margin-top: 30px; 
