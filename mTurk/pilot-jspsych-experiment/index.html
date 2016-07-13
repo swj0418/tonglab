@@ -7,6 +7,7 @@
 <script type="text/javascript" src="static/lib/jQueryRotate.js"></script>
 <script src="static/lib/seedrandom.js"></script>
 <script src="static/lib/TimTurkTools.js"></script>
+<script src="static/js/utils.js"></script>
 
 <style>
 /* Instruction formatting */
@@ -76,28 +77,21 @@ var displayTime = 200;
 var isiTime = 1000;
 var preShowTime = 500;
 var reportShowTime = 1000;
-var practiceTrialsPerSS = 1;
-var blockTrialsPerSS = 1;
+var practiceTrialsPerSS = 2;
 var numTrials = 40;
 var setSize = [1, 2, 3, 6];
 var numSetSize = setSize.length;
-var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
+// var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
 var randTime = new Date();
 var randSeed = randTime.getTime();
 var startExpTime;
 
 /* Seed selection based on current date (randTime.getTime()) */
 Math.seedrandom(randSeed);
-var startWithBars = Math.random()<0.50; 
 
 /* Pregenerated trial arrays */
 var conditions;
-/*
-var practiceBarTrials = [];
-var practiceGrateTrials = [];
-var barTrials = [];
-var grateTrials = [];
-*/
+var practiceTrials = [];
 var genTrials = [];
 var totalTrials = [];
 
@@ -141,9 +135,7 @@ $(window).resize(function() {
   	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
   	$("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
 	$("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
-  	//SetItems(totalTrials[currentBlock][currentTrial]);
   	AdjustElements(totalTrials[currentBlock][currentTrial]);
-  	//ReportSelection(totalTrials[currentBlock][currentTrial]);
 });
 
 /* Clears all radio buttons in the instructions */
@@ -156,10 +148,6 @@ function ClearAll() {
 function ChangeRadioOther() {
 	var other= document.getElementById("SSother");
 	other.value=document.getElementById("inputother").value;
-}
-
-function isNumber(n) {
-	return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
 /* Gets viewing distance choice from instructions, sets distFromScreen*/
@@ -230,12 +218,10 @@ function DrawFixation(element) {
 }
 
 function ChangeToBar() {
-	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
 	$(".gabor").attr('src', "static/images/bar.png");
 }
 
 function ChangeToGabor() {
-	//document.getElementById("gaborCont").src="http://lorempixel.com/400/200";
 	$(".gabor").attr('src', "static/images/gaborCont.png");
 }
 
@@ -287,7 +273,6 @@ function ProcessConditions() {
 
 
 /* Normalize random spacing values to sum to available space */
-/*
 function randSpacings(nItems, startAngle) {
 	var curSpacings = [];
 	var curCoordinates = [];
@@ -305,16 +290,6 @@ function randSpacings(nItems, startAngle) {
 	}
 	return curSpacings;
 }
-*/
-
-/* Make sure all numbers in an array are between 0 and 360: */
-function wrap(v) {
-  	for (var i=0; i<v.length; i++) {
-    	if (v[i]>360) { v[i]-=360; }
-    	if (v[i]<0) { v[i]+=360; }
-  	}
-  	return v;
-} 
 
 /* Convert spacing angles to x, y coordinates for element placement */
 function toCoordinates(angleSpacings) {
@@ -330,16 +305,15 @@ function toCoordinates(angleSpacings) {
 }
 
 /* Generate trials: Seed the random number generator. */
-/*
 function GenerateTrials() {
 	var startAngle;
 	var itemOrients = [];
 	var curAngles = [];
 	var curCoordinates = [];
 	var targetIndex;
-	var numTrialsPerSS = numTrialsPerBlock[2]/numSetSize;
+
 	for (var i=0; i<numSetSize; i++) {
-		for (var j = 0; j<numTrialsPerSS; j++) {
+		for (var j = 0; j<practiceTrialsPerSS; j++) {
 			startAngle = Math.floor(Math.random()*360);
 		    for (var k=0; k<setSize[i]; k++) {
 		        itemOrients.push(Math.floor(Math.random()*360));
@@ -347,98 +321,19 @@ function GenerateTrials() {
 		    curAngles = randSpacings(setSize[i], startAngle);
 		    curCoordinates = toCoordinates(curAngles);
 		    targetIndex = Math.floor(Math.random() * setSize[i]);
-		    barTrials.push({'startAngle': startAngle,
-		    				'items': itemOrients,
-		    				'randAngles': curAngles,
-		    				'randSpacings': curCoordinates,
-		    				'targetIndex': targetIndex, 
-		                    'type': 'bar', 
-		                    'setSize': setSize[i],
-		                    'isPractice': 0});
+		    practiceTrials.push({'stimtype': 2, 
+			                    'setSize': setSize[i],
+			    				'targetIndex': targetIndex,
+			    				'items': itemOrients,
+			    				'randAngles': curAngles,
+			    				'randSpacings': curCoordinates,
+			    				'startAngle': startAngle,
+			                    'isPractice': 1});
 		    itemOrients = [];
 		    curCoordinates = [];
 		}
 	}
-	barTrials = Shuffle(barTrials);
-	
-	var numTrialsPerSS = numTrialsPerBlock[3]/numSetSize;
-	for (var i=0; i<numSetSize; i++) {
-		for (var j = 0; j<numTrialsPerSS; j++) {
-			startAngle = Math.floor(Math.random()*360);
-		    for (var k=0; k<setSize[i]; k++) {
-		        itemOrients.push(Math.floor(Math.random()*360));
-		    }
-		    curAngles = randSpacings(setSize[i], startAngle);
-		    curCoordinates = toCoordinates(curAngles, setSize[i]);
-		    targetIndex = Math.floor(Math.random() * setSize[i]);
-		    grateTrials.push({'startAngle': startAngle,
-		    				'items': itemOrients,
-		    				'randAngles': curAngles,
-		    				'randSpacings': curCoordinates,
-		    				'targetIndex': targetIndex, 
-		                    'type': 'grate', 
-		                    'setSize': setSize[i],
-		                    'isPractice': 0});
-		    itemOrients = [];
-		    curCoordinates = [];
-		}
-	}
-	grateTrials = Shuffle(grateTrials);
-
-	var numTrialsPerSS = numTrialsPerBlock[0]/numSetSize;
-	for (var i=0; i<numSetSize; i++) {
-		for (var j = 0; j<numTrialsPerSS; j++) {
-			startAngle = Math.floor(Math.random()*360);
-		    for (var k=0; k<setSize[i]; k++) {
-		        itemOrients.push(Math.floor(Math.random()*360));
-		    }
-		    curAngles = randSpacings(setSize[i], startAngle);
-		    curCoordinates = toCoordinates(curAngles, setSize[i]);
-		    targetIndex = Math.floor(Math.random() * setSize[i]);
-		    practiceBarTrials.push({'startAngle': startAngle,
-		    				'items': itemOrients,
-		    				'randAngles': curAngles,
-		    				'randSpacings': curCoordinates,
-		    				'targetIndex': targetIndex,  
-		                    'type': 'bar', 
-		                    'setSize': setSize[i],
-		                    'isPractice': 1});
-		    itemOrients = [];
-		    curCoordinates = [];
-		}
-	}
-	practiceBarTrials = Shuffle(practiceBarTrials);
-
-	var numTrialsPerSS = numTrialsPerBlock[1]/numSetSize;
-	for (var i=0; i<numSetSize; i++) {
-		for (var j = 0; j<numTrialsPerSS; j++) {
-			startAngle = Math.floor(Math.random()*360);
-		    for (var k=0; k<setSize[i]; k++) {
-		        itemOrients.push(Math.floor(Math.random()*360));
-		    }
-		    curAngles = randSpacings(setSize[i], startAngle);
-		    curCoordinates = toCoordinates(curAngles, setSize[i]);
-		    targetIndex = Math.floor(Math.random() * setSize[i]);
-		    practiceGrateTrials.push({'startAngle': startAngle,
-		    				'items': itemOrients,
-		    				'randAngles': curAngles,
-		    				'randSpacings': curCoordinates,
-		    				'targetIndex': targetIndex, 
-		                    'type': 'grate', 
-		                    'setSize': setSize[i],
-		                    'isPractice': 1});
-		    itemOrients = [];
-		    curCoordinates = [];
-		}
-	}
-	practiceGrateTrials = Shuffle(practiceGrateTrials);
-}
-*/
-
-function convertTo($type, $num) {
-    if ($type == "rads") {$result = $num*((Math.PI)/180);}
-	if ($type == "degs") {$result = $num*(180/(Math.PI));}
-    return $result;
+	practiceTrials = Shuffle(practiceTrials);
 }
 
 /* Start the experiment. Show trials for either bars or gratings first (at random), practice right before testing */
@@ -451,16 +346,9 @@ function StartExperiment() {
 	}
 	*/
 	GetSpec();
-	// GenerateTrials();
+	GenerateTrials();
 	ProcessConditions();
-	totalTrials = [genTrials];
-	/*
-	if (startWithBars) {
-	  	totalTrials = [practiceBarTrials, barTrials, practiceGrateTrials, grateTrials];
-	} else {
-	    totalTrials = [practiceGrateTrials, grateTrials, practiceBarTrials, barTrials];
-	}
-	*/
+	totalTrials = [practiceTrials genTrials];
 	$('#instructions').hide();
 	$("#continuousReport").height($(window).height());
   	$("#showTrial").height($(window).height());
@@ -558,8 +446,6 @@ $(function() {
   	$(document).bind('mousemove.overall', function(e) {
     	mouseX = e.pageX;
     	mouseY = e.pageY;
-    	// console.log(mouseX);
-		// console.log(mouseY);
   	});
 });
 
@@ -575,13 +461,10 @@ function ReportSelection(trialStruct) {
 	var c = document.getElementById("circSelect");
 	c.width = gaborDim + 2 * circMargin;
 	c.height = gaborDim + 2 * circMargin;
-	//c.left = trialStruct.randSpacings[targetIndex].x + circMargin;
-	//c.top = trialStruct.randSpacings[targetIndex].y + circMargin;
 	var ctx = c.getContext("2d");
 
 	ctx.beginPath();
 	ctx.arc(c.width/2,c.height/2,gaborRadius,0,2*Math.PI);
-	//ctx.lineWidth = outLine * pixelsPerDegree;
 	//ctx.strokeStyle = '#FFFFFF';
 	ctx.stroke();
 }
@@ -700,6 +583,7 @@ function SendToServer(id, curData) {
 
 /*
 $(window).load(function () {
+	ReadConditions();
   	$('#startExperimentButton').show();
   	$('#loading').hide();
 });
