@@ -335,6 +335,7 @@ function NextTrial() {
 	$('#showTrial').show();
   	if (currentTrial>=totalTrials[currentBlock].length) {
     	if (currentBlock==totalTrials.length-1) {
+    	$('showTrial').hide();
       	Done();
       	return;
     	} else {
@@ -533,8 +534,7 @@ function SaveData() {
     	"screenWidth": screen.width,
     	"screenHeight": screen.height,   
     	"totalTime": totalTime,
-    	//"comments": $('#comments').val(),
-    	//"birthday": $('#date').val() + "," + $('#month').val() + "," + $('#year').val(),
+    	"comments": $('#comments').val(),
     	"trialStruct": totalTrials
   	};
   	SendToServer(curID, d);
