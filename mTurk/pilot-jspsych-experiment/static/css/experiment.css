@@ -25,6 +25,26 @@ body {
   display: none;
 }
 
+#clearAllButton {
+  display: inline-block;
+  color: black; 
+  border: 3px outset gray; 
+  background-color: darkgray; 
+  padding: 4px; 
+  text-decoration: none; 
+  font-family: Arial, Helvetica; 
+  font-weight: bold;
+  font-size: 12pt;
+}
+
+#clearAllButton:hover {
+  border: 3px inset gray; 
+}
+
+#clearAllButton:active {
+  border: 3px inset gray; 
+}
+
 #loading {
   font-size: 10pt;
   font-style: bold;
