@@ -17,6 +17,11 @@ function IsOnTurk() {
   }
 }
 
+function GetHitId() {
+	var hitId = turkGetParam( 'hitId', 'NONE' );
+	return hitId;
+}	
+
 function GetAssignmentId() {
 	var assignmentId = turkGetParam( 'assignmentId', 'NONE' );
 	return assignmentId;

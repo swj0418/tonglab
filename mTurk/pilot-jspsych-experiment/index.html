@@ -62,16 +62,6 @@
 		<script src="static/lib/TimTurkTools.js"></script>
 	</head>
 	<body>
-		<script>
-			var workerId = GetWorkerId();
-			var assignmentId = GetAssignmentId();
-
-			if (IsOnTurk() && IsTurkPreview()) {
-	  			$("#accepted").show();
-	  			$("#preview").show();
-			}
-		</script>
-
 		<div id="container-ad">
 
 			<div id="ad">
@@ -124,8 +114,17 @@
 							        including complete instructions and an informed consent agreement.
 							    </p>
 							    <script>
+							    	var hitId = GetHitId();
+									var workerId = GetWorkerId();
+									var assignmentId = GetAssignmentId();
+
+									if (IsOnTurk() && IsTurkPreview()) {
+							  			$("#accepted").hide();
+							  			$("#preview").show();
+									}
+								
 									function openwindow() {
-							    		popup = window.open('exp.html?hitId={{ hitid }}&assignmentId={{ assignmentid }}&workerId={{ workerid }}','Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
+							    		popup = window.open('exp.html?hitId=' + hitId + '&assignmentId=' + assignmentId + '&workerId=' + workerId,'Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
 							  		}
 							    </script>
 							    <div class="alert alert-warning">
