@@ -98,6 +98,8 @@ var inCircle = 0.0541;
 /* Unit conversions */
 var inchTomm = 25.4;
 
+$('#assignmentId').val(GetAssignmentId());
+
 $(window).resize(function() {
 	if (startExpTime != null) {
 		centerX = $(window).width()/2, centerY = $(window).height()/2;
@@ -310,13 +312,11 @@ function GenerateTrials() {
 
 /* Start the experiment. Show trials for either bars or gratings first (at random), practice right before testing */
 function StartExperiment() {
-	startExpTime = new Date();
-	/*
 	if (IsOnTurk() && IsTurkPreview()) {
 	  	alert("Please accept the HIT before continuing.");
 	  	return false;
 	}
-	*/
+	startExpTime = new Date();
 	GetSpec();
 	GenerateTrials();
 	ReadConditions();
@@ -633,11 +633,10 @@ console.log(screen.height);
 </div>
 
 <!-- Start form here to capture comments -->
-<!--
-<form id="turkSubmit" action="https://www.mturk.com/mturk/externalSubmit" method="get">
-<input type="hidden" name="assignmentId" id="assignmentId" value="">
+<form id="turkSubmit" action="https://www.mturk.com/mturk/externalSubmit" method="post">
 <input type="hidden" name="assignmentId" id="assignmentId" value="">
 <input type="submit" value="Submit" name="submitButton" id="submitButton" style="display: none">
+<!--
  submit to turk
  https://workersandbox.mturk.com/mturk/externalSubmit
 https://www.mturk.com/mturk/externalSubmit
@@ -648,6 +647,7 @@ https://www.mturk.com/mturk/externalSubmit
 <textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
 <a href="javascript:SaveData()" id="timSubmit">Submit</a>
 </div><div id="saving">Saving . . .</div></div>
+</form>
 
 <!-- Basic structure for a trial: -->
 <div id="showTrial">
