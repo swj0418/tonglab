@@ -1,682 +1,142 @@
+<!doctype html>
+<!-- 
+	The ad.html has a very specific format.
+
+	Really there are two "ads" contained within this file.
+
+	The first ad displays to participants who are browsing
+	the Amazon Mechanical Turk site but have not yet accepted
+	your hit.  
+
+	The second part of the ad display after the person selected
+	"Accept HIT" on the Amazon website.  This will reload the
+	ad and will display a button which, when clicked, will pop
+	open a new browser window pointed at your local psiTurk
+	server (assuming it is running and accessible to the Internet).
+
+	See comments throughout for hints
+
+-->
 <html>
-<title>TongLab: Turk</title>
-<link rel="icon" type="image/gif" href="static/favicon.gif">
-<body style="background-color:rgb(128,128,128);margin:0">
-<head></head>
-<script src="static/lib/jquery-3.0.0.min.js"></script>
-<script src="static/lib/jQueryRotate.js"></script>
-<script src="static/lib/seedrandom.js"></script>
-<script src="static/lib/TimTurkTools.js"></script>
-<script src="static/js/utils.js"></script>
-<link rel="stylesheet" type="text/css" href="static/css/experiment.css">
-<link rel="stylesheet" type="text/css" href="static/css/showTrial.css">
-
-<style>
-/* Continuous report screen */
-#continuousReport {
-	width: 100%;
-	max-height: 80%;
-	/* border: 1px solid black; */
-	background: rgb(128,128,128);
-	margin: 40px auto;
-	position: relative;
-	display: none;
-}
-
-#continuousStimulus {
-	position: absolute;
-	display: none;
-	
-}
-
-#targetSelect {
-	position: absolute;
-}
-
-</style>
-
-<script>
-console.log("Version 1.0.0");
-/* Options: */
-/* Display statistics seem to suggest a common screen resolution of 
-1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
-600mm distance from center of screen */
-
-var displayTime = 200;
-var isiTime = 1000;
-var preShowTime = 500;
-var reportShowTime = 1000;
-var practiceTrialsPerSS = 2;
-var numTrials = 40;
-var setSize = [1, 2, 3, 6];
-var numSetSize = setSize.length;
-// var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
-var randTime = new Date();
-var randSeed = randTime.getTime();
-var startExpTime;
-
-/* Seed selection based on current date (randTime.getTime()) */
-Math.seedrandom(randSeed);
-
-/* Pregenerated trial arrays */
-var conditions;
-var practiceTrials = [];
-var genTrials = [];
-var totalTrials = [];
-
-/* Pointers for where we are in the experiment: */
-var currentTrial = -1;
-var currentBlock = 0;
-
-/* Default selections for screen size and resolution */
-var horzRes = screen.width;
-var horzLength = 343; // measurements in mm
-var distFromScreen = 600; // measurements in mm
-var centerX = ($(window).width())/2;
-var centerY = ($(window).height())/2;
-
-/* Pixels per visual angle degree and target image dimension calculations */
-var oppLength = horzLength/2;
-var totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
-var pixelsPerDegree = horzRes/totalVisAngle;
-var gaborRadius = Math.floor(pixelsPerDegree);
-var gaborDim = 2 * gaborRadius;
-
-/* Target location within eccentricity values */
-var minAngle_centers = 38;
-var eccenAngle = 4;
-var eccenDist = eccenAngle * pixelsPerDegree;
-
-/* Target canvas circle offset */
-var circMargin = 2;
-
-/* Fixation angle degrees */
-var outCircle = 0.2432;
-var outLine = 0.0541;
-var inCircle = 0.0541;
-
-/* Unit conversions */
-var inchTomm = 25.4;
-
-$('#assignmentId').val(GetAssignmentId());
-
-$(window).resize(function() {
-	if (startExpTime != null) {
-		centerX = $(window).width()/2, centerY = $(window).height()/2;
-	  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
-	  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
-	  	$("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
-		$("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
-	  	AdjustElements(totalTrials[currentBlock][currentTrial]);
-	}
-});
-
-/* Clears all radio buttons in the instructions */
-function ClearAll() { 
-	Array.prototype.slice.apply(document.querySelectorAll("input[type='radio']")).map(function(e){ e.checked = false });
-	$("#screenSize").prop('checked', true);
-	$("#viewingDistance").prop('checked', true);
-}
-
-function ChangeRadioOther() {
-	var other= document.getElementById("SSother");
-	other.value=document.getElementById("inputother").value;
-}
-
-/* Gets viewing distance choice from instructions, sets distFromScreen*/
-function GetSpec() {
-	var vdValue = $('input[name=VD]:checked').val();
- 	if (vdValue != "0") {
-		distFromScreen = 10 * (36 + (10 * (vdValue)));
-  	}
-  	ChangeRadioOther();
-  	var ssValue = $('input[name=SS]:checked').val();
-  	console.log(ssValue);
-  	console.log(isNumber(ssValue));
-  	if (isNumber(ssValue)) {
-  		horzLength = Math.floor(GetHorzLength(ssValue));
-  	}
-  	UpdateElements();
-}
-
-function GetHorzLength(screenSize) {
-	var horizontal = screenSize * inchTomm * Math.cos(Math.atan(screen.height/screen.width));
-	console.log(horizontal);
-	return horizontal;
-}
-
-/* Apply new environment conditions to gabor patch dimensions and fixation */
-function UpdateElements() {
-	oppLength = horzLength/2;
-	totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
-	pixelsPerDegree = horzRes/totalVisAngle;
-	gaborRadius = Math.floor(pixelsPerDegree);
-	gaborDim = 2 * gaborRadius;
-	eccenDist = eccenAngle * pixelsPerDegree;
-	$(".gabor").css("width", gaborDim);
-
-	var c = document.getElementById("fixationShow");
-	var d = document.getElementById("fixationCont");
-	DrawFixation(c);
-	DrawFixation(d);
-
-	$(".fixation").css("margin-top", -gaborRadius);
-	$(".fixation").css("margin-left", -gaborRadius);
-	$(".fixation").show();
-}
-
-function AdjustElements(trialStruct) {
-	for (var i=0; i<trialStruct.setSize; i++) {
-		$('#item' + (i+1)).css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[i].y - gaborDim);
-		$('#item' + (i+1)).css("left", $(window).width()/2 + trialStruct.randSpacings[i].x);
-	}
-	$("#targetSelect").css("left", $(window).width()/2 + trialStruct.randSpacings[trialStruct.targetIndex].x - circMargin);
-	$("#targetSelect").css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[trialStruct.targetIndex].y - gaborDim - circMargin);
-}
-
-function DrawFixation(element) {
-	element.width = gaborDim;
-	element.height = gaborDim;
-	var ctx = element.getContext("2d");
-	ctx.beginPath();
-	//ctx.arc(gaborRadius,gaborRadius,eccenDist,0,2*Math.PI);
-	ctx.arc(gaborRadius,gaborRadius,outCircle * pixelsPerDegree,0,2*Math.PI);
-	//ctx.lineWidth = outLine * pixelsPerDegree;
-	ctx.stroke();
-
-	ctx.beginPath();
-	ctx.arc(gaborRadius,gaborRadius,inCircle * pixelsPerDegree,0,2*Math.PI);
-	ctx.fill();
-	ctx.stroke();
-}
-
-function ChangeToBar() {
-	$(".gabor").attr('src', "static/images/bar.png");
-}
-
-function ChangeToGabor() {
-	$(".gabor").attr('src', "static/images/gaborCont.png");
-}
-
-function ReadConditions() {
-	var request = new XMLHttpRequest();
-	request.onreadystatechange = function() {
-		if((request.readyState === 4) && (request.status === 200)) {
-			conditions = request.responseText;
-			ProcessConditions();
-		}
-	}
-	request.open('GET', 'conditions/data.txt', true);
-	request.send();
-}
-
-function ProcessConditions() {
-	var displayID;
-	var stimtype;
-	var setsize;
-	var target;
-	var itemOrients = [];
-	var curAngles = [];
-	var curCoordinates = [];
-
-	conditionStream = conditions.split(/\s+/);
-	numValuesPerTrial = (conditionStream.length - 1)/numTrials;
-	for (var i = 0; i < numTrials; i++) {
-		displayID = parseFloat(conditionStream[i * numValuesPerTrial]);
-		stimtype = parseFloat(conditionStream[i * numValuesPerTrial + 1]);
-		setsize = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
-		target = parseFloat(conditionStream[i * numValuesPerTrial + 3]) - 1;
-		for (var j = 0; j < setsize; j++) {
-			itemOrients[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 4]);
-			curAngles[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 10]);
-		}
-		curCoordinates = toCoordinates(curAngles);
-		genTrials.push({'displayID': displayID, 
-		                'stimtype': stimtype, 
-		                'setSize': setsize,
-						'targetIndex': target,
-						'items': itemOrients,
-						'randAngles': curAngles,
-						'randSpacings': curCoordinates,
-			            'isPractice': 0});
-		itemOrients = [];
-		curAngles = [];
-		curCoordinates = [];
-	}
-}
-
-
-/* Normalize random spacing values to sum to available space */
-function randSpacings(nItems, startAngle) {
-	var curSpacings = [];
-	var curCoordinates = [];
-	var availableSpace;
-	var curRandSum = 0;
-			
-	availableSpace = 360 - (minAngle_centers * nItems);
-	for(i = 0; i<nItems; i++) {
-		curSpacings.push(Math.random());
-		curRandSum += curSpacings[i];
-	}
-	curSpacings[0] = startAngle + minAngle_centers + (curSpacings[0]/curRandSum) * availableSpace;
-	for(j = 1; j<nItems; j++) {
-		curSpacings[j] = curSpacings[j - 1] + minAngle_centers + (curSpacings[j]/curRandSum) * availableSpace;
-	}
-	return curSpacings;
-}
-
-/* Convert spacing angles to x, y coordinates for element placement */
-function toCoordinates(angleSpacings) {
-	var curCoordinates = [];
-	angleSpacings = wrap(angleSpacings);
-	for(i = 0; i<angleSpacings.length; i++) {
-		coordX = Math.floor(Math.cos(convertTo("rads", angleSpacings[i])) * eccenDist) - gaborRadius;
-		coordY = Math.floor(Math.sin(convertTo("rads", angleSpacings[i])) * eccenDist) - gaborRadius;
-		curCoordinates.push({'x': coordX,
-		 					'y': coordY});
-	}
-	return curCoordinates;
-}
-
-/* Generate trials: Seed the random number generator. */
-function GenerateTrials() {
-	var startAngle;
-	var itemOrients = [];
-	var curAngles = [];
-	var curCoordinates = [];
-	var targetIndex;
-
-	for (var i=0; i<numSetSize; i++) {
-		for (var j = 0; j<practiceTrialsPerSS; j++) {
-			startAngle = Math.floor(Math.random()*360);
-		    for (var k=0; k<setSize[i]; k++) {
-		        itemOrients.push(Math.floor(Math.random()*360));
-		    }
-		    curAngles = randSpacings(setSize[i], startAngle);
-		    curCoordinates = toCoordinates(curAngles);
-		    targetIndex = Math.floor(Math.random() * setSize[i]);
-		    practiceTrials.push({'stimtype': 2, 
-			                    'setSize': setSize[i],
-			    				'targetIndex': targetIndex,
-			    				'items': itemOrients,
-			    				'randAngles': curAngles,
-			    				'randSpacings': curCoordinates,
-			    				'startAngle': startAngle,
-			                    'isPractice': 1});
-		    itemOrients = [];
-		    curCoordinates = [];
-		}
-	}
-	practiceTrials = Shuffle(practiceTrials);
-}
-
-/* Start the experiment. Show trials for either bars or gratings first (at random), practice right before testing */
-function StartExperiment() {
-	if (IsOnTurk() && IsTurkPreview()) {
-	  	alert("Please accept the HIT before continuing.");
-	  	return false;
-	}
-	startExpTime = new Date();
-	GetSpec();
-	GenerateTrials();
-	ReadConditions();
-	totalTrials = [practiceTrials, genTrials];
-	$('#instructions').hide();
-	$("#continuousReport").height($(window).height());
-  	$("#showTrial").height($(window).height());
-	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
-  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
-	NextTrial();
-}
-
-/* Show the next trial or show the done screen if they are finished: */
-function NextTrial() {
-	currentTrial++;
-	$('#showTrial').show();
-  	if (currentTrial>=totalTrials[currentBlock].length) {
-    	if (currentBlock==totalTrials.length-1) {
-    	$('showTrial').hide();
-      	Done();
-      	return;
-    	} else {
-      		currentTrial = 0;
-      		currentBlock++;
-      		if (currentBlock == 1) {
-        		alert("Okay, time for the real experiment. You won't get feedback about how you are doing anymore. Please do your best!");
-      		}
-    	}
-  	}
-  	SetItems(totalTrials[currentBlock][currentTrial]);
-  	$('#elements').hide();
-  	TrialProgress(totalTrials[currentBlock][currentTrial]);
-}
-
-/* Places targets within an eccentricity with 
-randomized spacing and orientations */
-function SetItems(trialStruct) {
-	if (trialStruct.stimtype == 1) {
-		ChangeToBar();
-	}
-	if (trialStruct.stimtype == 2) {
-		ChangeToGabor();
-	}
-	for (var i=0; i<trialStruct.setSize; i++) {
-		placeGabor('#item' + (i+1), i, trialStruct);
-		$('#item' + (i+1)).show();
-	}
-}
-
-function ccwRotate(radians, item) {
-	$(item).rotate(-radians);
-}
-
-function placeGabor(item, curTarget, trialStruct) {
-	$(item).css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[curTarget].y - gaborDim);
-	$(item).css("left", $(window).width()/2 + trialStruct.randSpacings[curTarget].x);
-	ccwRotate(trialStruct.items[curTarget], item);
-}
-
-function TrialProgress(trialStruct) {
-  	/*
-  	if (currentBlock == 1) {
-   		$('#pressKey').html('<u><font color=navy>Practice for Part ' + (currentBlock+1) + ' of 2</font></u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');
-  	}  else {
-    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Press space to start this trial.');  
-  	}
-  	$('#pressKey').show();
-  	*/
-
-  	if(currentTrial == 0) {
-  		$(document).bind('keyup.startTrial', 'space', function(e) { 
-	    	$(document).unbind('keyup.startTrial');
-	    	ShowTrial(trialStruct);
-    	});
-  	} else {
-  		ShowTrial(trialStruct);
-  	}
-}
-
-/* Basic trial structure: Show the stimuli for this trial; 
-  then delay for fixed ISI; then call ShowContinuousReport */
-function ShowTrial(trialStruct) {
-	document.body.style.cursor = 'none';
-   	setTimeout(function() {
-       	$('#elements').show();
-       	setTimeout(function() { 
-           	$('#elements').hide();
-           	setTimeout(function() {
-           		$('#showTrial').hide();
-           		$('.array').hide();
-           		ShowContinuousReport(trialStruct);
-           	}, isiTime);
-       	}, displayTime);
-   	}, preShowTime);
-}
-
-/* Always track the mouse */
-var mouseX, mouseY;
-$(function() {
-  	$(document).bind('mousemove.overall', function(e) {
-    	mouseX = e.pageX;
-    	mouseY = e.pageY;
-  	});
-});
-
-function ReportSelection(trialStruct) {
-	var targetIndex = trialStruct.targetIndex;
-	console.log(targetIndex);
-	console.log(trialStruct.randSpacings[targetIndex]);
-	$("#targetSelect").width(gaborDim + 2 * circMargin);
-	$("#targetSelect").height(gaborDim + 2 * circMargin);
-	$("#targetSelect").css("left", $(window).width()/2 + trialStruct.randSpacings[targetIndex].x - circMargin);
-	$("#targetSelect").css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[targetIndex].y - gaborDim - circMargin);
-
-	var c = document.getElementById("circSelect");
-	c.width = gaborDim + 2 * circMargin;
-	c.height = gaborDim + 2 * circMargin;
-	var ctx = c.getContext("2d");
-
-	ctx.beginPath();
-	ctx.arc(c.width/2,c.height/2,gaborRadius,0,2*Math.PI);
-	//ctx.strokeStyle = '#FFFFFF';
-	ctx.stroke();
-}
-
-/* Handle continuous report for either bar or grating response by using a single
-   image with jQuery rotation based on mouse coordinate angle */
-function ShowContinuousReport(trialStruct) {
-  	var angleDeg = 0;
-  	var randAdj = 360 * Math.random();
-  	// console.log(randAdj);
-  	var curError = 360;
-  	var startTime = new Date();
-
-  	ReportSelection(trialStruct);
-
-  	setTimeout(function() {
-  		document.body.style.cursor = 'auto';
-  		$("#continuousStimulus").show();
-  		$(document).bind('keyup.curTrial', 'space', function(e) {
-			var answer = wrap(360 - (angleDeg + randAdj));
-			trialStruct.reportedAngle = Math.round(answer);
-	    	trialStruct.rt = (new Date()) - startTime;
-		    $(document).unbind('keyup.curTrial');
-		    $(document).unbind('mousemove.curTrial');
-		    
-		    var difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
-		    var oriDiff = Math.abs((difference%180)-90);
-		    var percentCorrect = (oriDiff/90) * 100;
-		    console.log(percentCorrect);
-
-		    /*
-		    if (trialStruct.isPractice) {
-		    	$('#feedbackError').html("Your error was: " + Math.round(curError) + " deg (aim for less than 20 deg.!)<br><br>Click to continue.");
-		    	var imgNum = Math.round(angleDeg);
-		    	howToSet('#feedbackReported', imgNum);
-		    	imgNum = Math.round(trialStruct.mean);
-		    	howToSet('#feedbackCorrect', imgNum);
-		    	$('#feedback').show();
-		    	$(document).bind('click.feedback', function(e) {
-		        	$('#feedback').hide(); 
-		        	NextTrial();
-		        	$(document).unbind('click.feedback');
-		      	});
-		    } else {
-		    	//NextTrial();
-		    }
-		     */
-		    $("#continuousStimulus").hide();
-		    $("#continuousReport").hide();
-	     	NextTrial();
-		});
-  	}, reportShowTime);
-
-	$(document).bind('mousemove.curTrial', function(e) {
-		var initOffset = $('#continuousReport').offset(); 
-	   	var relX = e.pageX - centerX;
-	  	var relY = e.pageY - centerY;
-		var curAngle = Math.atan2(relY,relX);
-		
-		angleDeg = (curAngle / Math.PI * 180.0);
-	    angleDeg = (angleDeg < 0) ? angleDeg+360:angleDeg;
-	    
-	    $("#continuousStimulus").css("top", ($("#continuousReport").height() - gaborDim)/2);
-	    $("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
-		$("#gaborCont").rotate(angleDeg + randAdj);
-	});
-
-	$("#continuousReport").show();
-	e = $.Event('mousemove');
-	e.pageX = mouseX;
-	e.pageY = mouseY;
-	$(document).trigger(e);
-}
-
-/* Done with the experiment; wait for comments and for them to hit Save */
-function Done() {
-  	$('#done').show();
-}
-
-/* Save the data to the server (choose what to save) */
-function SaveData() {
-  	var totalTime = new Date() - startExpTime;
-  	var newDate = new Date();
-  	$('#assignmentId').val(GetAssignmentId());
-  	var curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " + 
-  	"are on Turk, so you're probably testing. Enter an ID to save your data with:", "id");
-  	d = { 
-	    "curID": curID,
-    	"workerID": GetWorkerId(),
-	    "curTime": newDate.today() + " @ " + newDate.timeNow(),
-    	"userAgent": navigator.userAgent,
-    	"windowWidth": $(window).width(),
-    	"windowHeight": $(window).height(),
-    	"screenWidth": screen.width,
-    	"screenHeight": screen.height,   
-    	"totalTime": totalTime,
-    	"comments": $('#comments').val(),
-    	"trialStruct": totalTrials
-  	};
-  	SendToServer(curID, d);
-}
-
-/* Send the data to the server as JSON: */
-function SendToServer(id, curData) {
-  	var dataToServer = {
-    	'id': id,
-    	'experimentName': 'pilot',
-    	'curData': JSON.stringify(curData)
-  	}; 
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/save.pl",
-    	dataToServer
-	);
-}
-
-$(window).ready(function () {
-  	$('#startExperimentButton').show();
-  	$('#loading').hide();
-});
-
-$(function() {
-  	if (navigator.userAgent.indexOf('MSIE') != -1) {
-    	$('body').html('Unfortunately this HIT does not work in IE. It works in Chrome, Firefox or Safari. Sorry!');
-  	}
-});
-
-console.log($(window).width());
-console.log($(window).height());
-console.log(screen.width);
-console.log(screen.height);
-</script>
-
-<div id="instructions"><h2>Instructions</h2>
-
-<p style='text-align: center'><a href='javascript:ClearAll()' id='clearAllButton'>Clear All</a>
-
-<p>Please choose your screen size <b>(in inches)</b> from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers.</p>
-
-<input id="screenSize" type="radio" name="SS" value="15.6" checked="checked" style="display:none">
-<p style='text-align: center'>
-<input type="radio" id="SS11" name="SS" value="11"><label for="SS11"> 11' </label>
-<input type="radio" id="SS13" name="SS" value="13"><label for="SS13"> 13' </label>
-<input type="radio" id="SS15" name="SS" value="15"><label for="SS15"> 15' </label>
-<input type="radio" id="SS21" name="SS" value="21"><label for="SS21"> 21' </label>
-<input type="radio" id="SS23" name="SS" value="23"><label for="SS23"> 23' </label>
-<input type="radio" id="SSother" name="SS" value="other"><label for="SSother"> Other</label>
-<input id="inputother" type="text" onchange="ChangeRadioOther()"/>
-</p>
-
-<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
-
-<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
-
-<table align="center">
-    <tr>
-        <td>
-        	<label for="VD18">
-            	<img src="static/images/VD18.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
-            </label>
-        </td>
-        <td>
-        	<label for="VD22">
-            	<img src="static/images/VD22.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
-            </label>
-        </td>
-        <td>
-        	<label for="VD26">
-        		<img src="static/images/VD26.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
-        	</label>
-        </td>
-    </tr>
-    <tr>
-        <td style="text-align:center">
-            <input type="radio" id="VD18" name="VD" value="1">
-        </td>
-        <td style="text-align:center">
-            <input type="radio" id="VD22" name="VD" value="2">
-        </td>
-        <td style="text-align:center">
-            <input type="radio" id="VD26" name="VD" value="3">
-        </td>
-    </tr>
-</table>
-
-<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton'>Start Experiment</a>
-<div id="loading" style='text-align: center'><p><img src="static/images/spinner.svg" style="width: 30px; height: 30px"></p>Page elements still loading. Please wait. &nbsp; &nbsp; </div></p>
-
-<!-- Consent statement at bottom: -->
-<div id='consentDiv'><p><u>Consent to Participate in Research:</u></p><p>By answering the following questions, you are participating in a study being performed by cognitive scientists in the Vanderbilt University Psychology Department.  The purpose of this research is to examine human visual performance.</p><p>By participating you are confirming that you are over 18 years of age and have normal or corrected-to-normal vision.</p><p>If you have questions about this research, or if you would like to receive a report of this research when it is completed please contact William Ju at william.h.ju@vanderbilt.edu.</p><p>Your participation in this research is completely voluntary.  If you choose to participate, you may change your mind and leave the study at any time.  Refusal to participate or stopping your participation will involve no penalty or loss of benefits to which you are otherwise entitled.</p><p>You may decline to answer any or all of the following questions. Your anonymity is assured; the researchers who have requested your participation will not receive any personal information about you. </p><p>For questions, concerns, or complaints that are not being addressed by the researcher, or research-related harm contact:  Committee on the Use of Human Subjects in Research at Harvard University, 1414 Massachusetts Avenue, Second Floor, Cambridge, MA  02138. Phone: 617-496-CUHS (2847).  Email: cuhs@fas.harvard.edu</p><p>By continuing, you are confirming that you understand these instructions and conditions of participation.</p></div>
-</div>
-
-<p></p>
-
-</div>
-
-<!-- Start form here to capture comments -->
-<form id="turkSubmit" action="https://www.mturk.com/mturk/externalSubmit" method="post">
-<input type="hidden" name="assignmentId" id="assignmentId" value="">
-<input type="submit" value="Submit" name="submitButton" id="submitButton" style="display: none">
-<!--
- submit to turk
- https://workersandbox.mturk.com/mturk/externalSubmit
-https://www.mturk.com/mturk/externalSubmit
--->
-
-<!-- Screen for collecting comments when they are done: -->
-<div id="done"><div id="doneText">Done! Thanks!<br><br>Any comments for us? (Was it fun? Any technical difficulties?)<br><br>
-<textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
-<a href="javascript:SaveData()" id="timSubmit">Submit</a>
-</div><div id="saving">Saving . . .</div></div>
-</form>
-
-<!-- Basic structure for a trial: -->
-<div id="showTrial">
-<canvas id="fixationShow" class="fixation">
-Your browser does not support the HTML5 canvas tag.</canvas>
-<div id="elements">
-<div id="item1" class="array"><img id="gaborShow1" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item2" class="array"><img id="gaborShow2" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item3" class="array"><img id="gaborShow3" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item4" class="array"><img id="gaborShow4" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item5" class="array"><img id="gaborShow5" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item6" class="array"><img id="gaborShow6" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item7" class="array"><img id="gaborShow7" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item8" class="array"><img id="gaborShow8" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-</div>
-<!--<div id="pressKey">Click anywhere to start this trial.</div>
--->
-</div>
-
-<!-- Structure for continuous report after the trial: -->
-<div id="continuousReport">
-<canvas id="fixationCont" class="fixation">
-Your browser does not support the HTML5 canvas tag.</canvas>
-<div id="continuousStimulus"><img id="gaborCont" src="static/images/gaborCont.png" alt="response" class="gabor" width="100"></div>
-<div id="targetSelect"><canvas id="circSelect" width="200" height="200">
-Your browser does not support the HTML5 canvas tag.</canvas></div>
-</div>
-
-<!-- http://lorempixel.com/400/200 -->
-</div>
-</body>
+	<head>
+		<title>TongLab: Turk</title>
+		<link rel="icon" type="image/gif" href="static/favicon.gif">
+		<style>
+			/* these tyles need to be defined locally */
+			body {
+			    padding:0px;
+			    margin: 0px;
+			    background-color: white;
+			    color: black;
+			    font-family: Arial, Helvetica; 
+			    font-weight: 300; 
+			    font-size: 13pt;
+			}
+
+			/* ad.html  - the ad that people view first */
+			#adlogo {
+			    float: right;
+			    width: 140px;
+			    padding: 2px;
+			    border: 1px solid #ccc;
+			}
+
+			#container-ad {
+			    position: absolute;
+			    top: 0px; /* Header Height */
+			    bottom: 0px; /* Footer Height */
+			    left: 0px;
+			    right: 0px;
+			    padding: 100px;
+			    padding-top: 5%;
+			    border: 18px solid #f3f3f3;
+			    background: white;
+			}
+
+			#preview {
+				display: none;
+			}
+
+		</style>
+		<script src="static/lib/jquery-3.0.0.min.js"></script>
+		<script src="static/lib/TimTurkTools.js"></script>
+	</head>
+	<body>
+		<script>
+			var workerId = GetWorkerId();
+			var assignmentId = GetAssignmentId();
+
+			if (IsOnTurk() && IsTurkPreview()) {
+	  			$("#accepted").show();
+	  			$("#preview").show();
+			}
+		</script>
+
+		<div id="container-ad">
+
+			<div id="ad">
+				<div class="row">
+					<div id="preview" class="col-xs-2">
+						<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
+						<!-- 
+								If assignmentid is "ASSIGNMENT_ID_NOT_AVAILABLE"
+								it means the participant has NOT accepted your hit. 
+								This should display the typical advertisement about
+								your experiment: who can participate, what the
+								payment is, the time, etc...
+
+							-->
+
+							    <h1>Call for participants</h1>
+							    <p>
+									TongLab at Vanderbilt University is looking for online participants 
+									for a brief psychology experiment. The only requirements 
+									are that you are at least 18 years old and have a minimum of 20/40 vision.  The task will take XXXXX minutes and will pay XXXXX.
+							    </p>
+							    <div class="alert alert-danger">
+									<strong>This task can only be completed once.</strong> 
+									If you have already completed this task before the system will not 
+									allow you to run again. If this looks familiar please return the 
+									HIT so someone else can participate.
+							    </div>
+							    <p>
+								    Otherwise, please click the "Accept HIT" button on the Amazon site 
+								    above to begin the task.
+								</p>
+					</div>
+					<div id="accepted" class="col-xs-10">
+						<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
+								<!-- 
+									OTHERWISE
+									If assignmentid is NOT "ASSIGNMENT_ID_NOT_AVAILABLE"
+									it means the participant has accepted your hit. 
+									You should thus show them instructions to begin the 
+									experiment ... usually a button to launch a new browser
+									window pointed at your server.
+
+									It is important you do not change the code for the
+									openwindow() function below if you want you experiment
+									to work.
+								-->
+							    <h1>Thank you for accepting this HIT!</h1>
+							    <p>
+							    	By clicking the following URL link, you will be taken to the experiment,
+							        including complete instructions and an informed consent agreement.
+							    </p>
+							    <script>
+									function openwindow() {
+							    		popup = window.open('exp.html?hitId={{ hitid }}&assignmentId={{ assignmentid }}&workerId={{ workerid }}','Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
+							  		}
+							    </script>
+							    <div class="alert alert-warning">
+							    	<b>Warning</b>: Please disable pop-up blockers before continuing.
+							    </div>
+							    
+						    	<button type="button" class="btn btn-primary btn-lg" onClick="openwindow();">
+								  Begin Experiment
+								</button>
+					</div>
+			</div>
+		</div>
+	</body>
 </html>
