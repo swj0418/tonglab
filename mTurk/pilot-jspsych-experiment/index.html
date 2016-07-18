@@ -127,12 +127,20 @@
 							    		popup = window.open('exp.html?hitId=' + hitId + '&assignmentId=' + assignmentId + '&workerId=' + workerId,'Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
 							  		}
 							    </script>
+
+							    <noscript>
+									<h1>Warning: Javascript seems to be disabled</h1>
+									<p>This website requires that Javascript be enabled on your browser.</p>
+									<p>Instructions for enabling Javascript in your browser can be found 
+									<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
+								</noscript>
+
 							    <div class="alert alert-warning">
 							    	<b>Warning</b>: Please disable pop-up blockers before continuing.
 							    </div>
 							    
-						    	<button type="button" class="btn btn-primary btn-lg" onClick="openwindow();">
-								  Begin Experiment
+						    	<button type="button" onClick="openwindow();">
+								  Open Experiment
 								</button>
 					</div>
 			</div>

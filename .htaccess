@@ -4,3 +4,8 @@ Options -Indexes
 IndexOptions FancyIndexing
 ErrorDocument 403 /TongLab/error_pages/403.html
 ErrorDocument 404 /TongLab/error_pages/404.html
+
+<Files ~ "\.txt$">
+  Order allow,deny
+  Deny from all
+</Files>
