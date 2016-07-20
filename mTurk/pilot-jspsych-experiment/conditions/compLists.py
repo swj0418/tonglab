@@ -1,27 +1,52 @@
 #!/usr/bin/python
+import json
 import cgi
 import os
 import sys
+import time
+from datetime import datetime
 sys.stderr = sys.stdout # Make sure we can see any errors
 
 try:
-  # Read the id from the JSON and use as the filename:
+  # Read the id
   fs = cgi.FieldStorage()
-  if not os.path.exists("conditions"):
-    os.makedirs("conditions")
-    
-  saveFile = open("conditions/participants.txt", "w")
+  amtId = fs["id"].value
+  if fs["experimentName"].value != 'pilot':
+    raise Exception('An experimentName value was loaded but did not match')
   
-  # Now read the field curData, which we will assume is a string
-  # and print it to this file:
-  saveFile.write(fs["curData"].value)
+  # Open participants file to check time limit 
+  pFile = open("participants.txt", "r")
+  pString = pFile.read()
+  pList = json.loads(pString)
+
+  sFile = open("status.txt", "r")
+  sString = sFile.read()
+  sList = json.loads(sString)
+
+  # Close the file and tell jQuery all went well:
+  sFile.close()
+  pFile.close()
+
+  # Loop through list and check if over time
+  for i, j in enumerate(pList):
+    if pList[i][0] == amtId:
+      index = i
+      # Update status listings
+      sList[index] = 2
+      break
+
+  # Now write the updated list into JSON
+  with open("status.txt", "w") as sUpdate:
+    json.dump(sList, sUpdate)
   
   # Close the file and tell jQuery all went well:
-  saveFile.close()
+  pUpdate.close()
+  sUpdate.close()
+
   print "Status: 200 OK"
   print "Content-type: text/plain"
   print
-  print fs["id"].value + " saved"
+  print datetime.now().strftime('%Y-%m-%d %H:%M:%S') + " status.txt and participants.txt updated with a sequence completion"
 except:
 
   # Tell jQuery something went wrong

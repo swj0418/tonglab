@@ -63,10 +63,9 @@
 	</head>
 	<body>
 		<div id="container-ad">
-
 			<div id="ad">
 				<div class="row">
-					<div id="preview" class="col-xs-2">
+					<div id="preview">
 						<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
 						<!-- 
 								If assignmentid is "ASSIGNMENT_ID_NOT_AVAILABLE"
@@ -113,6 +112,15 @@
 							    	By clicking the following URL link, you will be taken to the experiment,
 							        including complete instructions and an informed consent agreement.
 							    </p>
+
+							    <div class="alert alert-warning">
+							    	<b>Warning</b>: Please disable pop-up blockers before continuing.
+							    </div>
+							    
+						    	<button type="button" onClick="openwindow();">
+								  Open Experiment
+								</button>
+								
 							    <script>
 							    	var hitId = GetHitId();
 									var workerId = GetWorkerId();
@@ -134,14 +142,6 @@
 									<p>Instructions for enabling Javascript in your browser can be found 
 									<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
 								</noscript>
-
-							    <div class="alert alert-warning">
-							    	<b>Warning</b>: Please disable pop-up blockers before continuing.
-							    </div>
-							    
-						    	<button type="button" onClick="openwindow();">
-								  Open Experiment
-								</button>
 					</div>
 			</div>
 		</div>

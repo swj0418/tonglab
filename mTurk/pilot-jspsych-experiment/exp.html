@@ -59,6 +59,7 @@ var startExpTime;
 Math.seedrandom(randSeed);
 
 /* Pregenerated trial arrays */
+var status;
 var conditions;
 var practiceTrials = [];
 var genTrials = [];
@@ -199,15 +200,26 @@ function ChangeToGabor() {
 }
 
 function ReadConditions() {
-	var request = new XMLHttpRequest();
-	request.onreadystatechange = function() {
-		if((request.readyState === 4) && (request.status === 200)) {
-			conditions = request.responseText;
+	var fileNum;
+	var listRequest = new XMLHttpRequest();
+	listRequest.onreadystatechange = function() {
+		if((listRequest.readyState === 4) && (listRequest.status === 200)) {
+			status = listRequest.responseText;
+			fileNum = AvailableConditions(status);
+		}
+	}
+	listRequest.open('GET', 'conditions/status.txt', true);
+	listRequest.send();
+
+	var dataRequest = new XMLHttpRequest();
+	dataRequest.onreadystatechange = function() {
+		if((dataRequest.readyState === 4) && (dataRequest.status === 200)) {
+			conditions = dataRequest.responseText;
 			ProcessConditions();
 		}
 	}
-	request.open('GET', 'conditions/data.txt', true);
-	request.send();
+	dataRequest.open('GET', 'conditions/data.txt', true);
+	dataRequest.send();
 }
 
 function ProcessConditions() {
