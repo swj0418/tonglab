@@ -57,93 +57,138 @@
 				display: none;
 			}
 
+			#error {
+				display: none;
+			}
+
 		</style>
 		<script src="static/lib/jquery-3.0.0.min.js"></script>
 		<script src="static/lib/TimTurkTools.js"></script>
 	</head>
 	<body>
 		<div id="container-ad">
-			<div id="ad">
-				<div class="row">
-					<div id="preview">
-						<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
-						<!-- 
-								If assignmentid is "ASSIGNMENT_ID_NOT_AVAILABLE"
-								it means the participant has NOT accepted your hit. 
-								This should display the typical advertisement about
-								your experiment: who can participate, what the
-								payment is, the time, etc...
+			<div id="preview">
+				<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
+				<!-- 
+						If assignmentid is "ASSIGNMENT_ID_NOT_AVAILABLE"
+						it means the participant has NOT accepted your hit. 
+						This should display the typical advertisement about
+						your experiment: who can participate, what the
+						payment is, the time, etc...
 
-							-->
+					-->
 
-							    <h1>Call for participants</h1>
-							    <p>
-									TongLab at Vanderbilt University is looking for online participants 
-									for a brief psychology experiment. The only requirements 
-									are that you are at least 18 years old and have a minimum of 20/40 vision.  The task will take XXXXX minutes and will pay XXXXX.
-							    </p>
-							    <div class="alert alert-danger">
-									<strong>This task can only be completed once.</strong> 
-									If you have already completed this task before the system will not 
-									allow you to run again. If this looks familiar please return the 
-									HIT so someone else can participate.
-							    </div>
-							    <p>
-								    Otherwise, please click the "Accept HIT" button on the Amazon site 
-								    above to begin the task.
-								</p>
-					</div>
-					<div id="accepted" class="col-xs-10">
-						<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
-								<!-- 
-									OTHERWISE
-									If assignmentid is NOT "ASSIGNMENT_ID_NOT_AVAILABLE"
-									it means the participant has accepted your hit. 
-									You should thus show them instructions to begin the 
-									experiment ... usually a button to launch a new browser
-									window pointed at your server.
-
-									It is important you do not change the code for the
-									openwindow() function below if you want you experiment
-									to work.
-								-->
-							    <h1>Thank you for accepting this HIT!</h1>
-							    <p>
-							    	By clicking the following URL link, you will be taken to the experiment,
-							        including complete instructions and an informed consent agreement.
-							    </p>
-
-							    <div class="alert alert-warning">
-							    	<b>Warning</b>: Please disable pop-up blockers before continuing.
-							    </div>
-							    
-						    	<button type="button" onClick="openwindow();">
-								  Open Experiment
-								</button>
-								
-							    <script>
-							    	var hitId = GetHitId();
-									var workerId = GetWorkerId();
-									var assignmentId = GetAssignmentId();
-
-									if (IsOnTurk() && IsTurkPreview()) {
-							  			$("#accepted").hide();
-							  			$("#preview").show();
-									}
-								
-									function openwindow() {
-							    		popup = window.open('exp.html?hitId=' + hitId + '&assignmentId=' + assignmentId + '&workerId=' + workerId,'Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
-							  		}
-							    </script>
-
-							    <noscript>
-									<h1>Warning: Javascript seems to be disabled</h1>
-									<p>This website requires that Javascript be enabled on your browser.</p>
-									<p>Instructions for enabling Javascript in your browser can be found 
-									<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
-								</noscript>
-					</div>
+					    <h1>Call for participants</h1>
+					    <p>
+							TongLab at Vanderbilt University is looking for online participants 
+							for a brief psychology experiment. The only requirements 
+							are that you are at least 18 years old and have a minimum of 20/40 vision.  The task will take XXXXX minutes and will pay XXXXX.
+					    </p>
+					    <div class="alert alert-danger">
+							<strong>This task can only be completed once.</strong> 
+							If you have already completed this task before the system will not 
+							allow you to run again. If this looks familiar please return the 
+							HIT so someone else can participate.
+					    </div>
+					    <p>
+						    Otherwise, please click the "Accept HIT" button on the Amazon site 
+						    above to begin the task.
+						</p>
 			</div>
+			<div id="accepted">
+				<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
+				<!-- 
+						OTHERWISE
+						If assignmentid is NOT "ASSIGNMENT_ID_NOT_AVAILABLE"
+						it means the participant has accepted your hit. 
+						You should thus show them instructions to begin the 
+						experiment ... usually a button to launch a new browser
+						window pointed at your server.
+
+						It is important you do not change the code for the
+						openwindow() function below if you want you experiment
+						to work.
+					-->
+				    <h1>Thank you for accepting this HIT!</h1>
+				    <p>
+				    	By clicking the following URL link, you will be taken to the experiment,
+				        including complete instructions and an informed consent agreement.
+				    </p>
+
+				    <div class="alert alert-warning">
+				    	<b>Warning</b>: Please disable pop-up blockers before continuing.
+				    </div>
+							    
+			    	<button type="button" onClick="openwindow();">
+					  Open Experiment
+					</button>	
+			</div>		
+			<div id="error">
+				<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
+				<!-- 
+						REPEAT
+						If the user is found to be returning to the HIT after accepting, the participant will no longer be able to begin the experiment and will be asked to return the HIT.
+					-->
+                	<h1>Sorry, there was an error</h1>
+                	<p>
+                		Sorry, our records indicate that you have attempted to complete this HIT, but quit before finishing. Because this is a Psychology experiment, you can only complete this HIT once. Please return the HIT so someone else can perform the experiment.
+                	</p>
+            </div>
 		</div>
 	</body>
 </html>
+
+<script>
+	function openwindow() {
+		popup = window.open('exp.html?hitId=' + hitId + '&assignmentId=' + assignmentId + '&workerId=' + workerId,'Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
+	}
+
+	/*
+	function OpenStatus(workerId) {
+		var repeat;
+		var listRequest = new XMLHttpRequest();
+		listRequest.onreadystatechange = function() {
+			if((listRequest.readyState === 4) && (listRequest.status === 200)) {
+				status = JSON.parse(listRequest.responseText);
+				repeat = CheckRepeat(workerId);
+			}
+		}
+		listRequest.open('GET', 'conditions/status.txt', true);
+		listRequest.send();
+	}
+
+
+	function CheckRepeat(workerId) {
+
+	}
+	*/
+
+	var hitId = GetHitId();
+	var workerId = GetWorkerId();
+	var assignmentId = GetAssignmentId();
+
+	if (IsOnTurk() && IsTurkPreview()) {
+		$("#accepted").hide();
+		$("#preview").show();
+	}
+
+	//CheckRepeat();
+			
+	var dataToServer = {
+    	'id': workerId,
+    	'experimentName': 'pilot',
+    	'hitId': hitId,
+    	'assignmentId': assignmentId
+  	}; 
+  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/createLists.py",
+    	dataToServer
+    );
+
+</script>
+
+<noscript>
+	<h1>Warning: Javascript seems to be disabled</h1>
+	<p>This website requires that Javascript be enabled on your browser.</p>
+	<p>Instructions for enabling Javascript in your browser can be found 
+	<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
+</noscript>

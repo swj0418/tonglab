@@ -536,9 +536,11 @@ function SaveData() {
   	$('#assignmentId').val(GetAssignmentId());
   	var curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " + 
   	"are on Turk, so you're probably testing. Enter an ID to save your data with:", "id");
+  	var workerId = GetWorkerId();
+  	var hitId = GetHitId();
   	d = { 
 	    "curID": curID,
-    	"workerID": GetWorkerId(),
+    	"workerID": workerId,
 	    "curTime": newDate.today() + " @ " + newDate.timeNow(),
     	"userAgent": navigator.userAgent,
     	"windowWidth": $(window).width(),
@@ -549,7 +551,8 @@ function SaveData() {
     	"comments": $('#comments').val(),
     	"trialStruct": totalTrials
   	};
-  	SendToServer(curID, d);
+  	CompleteList(workerId, hitId, curID);
+  	SendToServer(workerId, d);
 }
 
 /* Send the data to the server as JSON: */
@@ -567,6 +570,19 @@ function SendToServer(id, curData) {
 	).fail(function(data) { 
 	   	document.forms[0].submit();  
 	});
+}
+
+/* Send completion indication to the server: */
+function CompleteList(workerId, hitId, assignmentId) {
+  	var tags = {
+    	'id': workerId,
+    	'experimentName': 'pilot',
+    	'hitId': hitId,
+    	'assignmentId': assignmentId
+  	}; 
+  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/compLists.py",
+    	tags
+    );
 }
 
 $(window).ready(function () {
