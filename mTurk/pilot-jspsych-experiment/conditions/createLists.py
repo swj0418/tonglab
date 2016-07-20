@@ -10,7 +10,7 @@ try:
   # Create empty list and write JSON to file:
   listNum = 300
   status = [0] * listNum
-  with open("status.txt", "w") as sFile:
+  with open("/var/www/html/TongLab/mTurk/pilot-jspsych-experiment/conditions/status.txt", "w") as sFile:
     json.dump(status, sFile)
   
   # Close the file and tell jQuery all went well:
@@ -18,7 +18,7 @@ try:
 
   # Create list with ['p', 't'] and write JSON to file:
   participants = [[0, 0]] * listNum
-  with open("participants.txt", "w") as pFile:
+  with open("/var/www/html/TongLab/mTurk/pilot-jspsych-experiment/conditions/participants.txt", "w") as pFile:
     json.dump(participants, pFile)
   
   # Close the file and tell jQuery all went well:

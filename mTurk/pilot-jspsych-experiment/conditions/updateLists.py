@@ -16,11 +16,11 @@ try:
   nowSec = time.mktime(now.timetuple())
 
   # Open participants file to check time limit 
-  pFile = open("participants.txt", "r")
+  pFile = open("/var/www/html/TongLab/mTurk/pilot-jspsych-experiment/conditions/participants.txt", "r")
   pString = pFile.read()
   pList = json.loads(pString)
   
-  sFile = open("status.txt", "r")
+  sFile = open("/var/www/html/TongLab/mTurk/pilot-jspsych-experiment/conditions/status.txt", "r")
   sString = sFile.read()
   sList = json.loads(sString)
 
@@ -38,9 +38,9 @@ try:
       sList[index] = 0
 
   # Now write the updated list into JSON
-  with open("participants.txt", "w") as pUpdate:
+  with open("/var/www/html/TongLab/mTurk/pilot-jspsych-experiment/conditions/participants.txt", "w") as pUpdate:
     json.dump(pList, pUpdate)
-  with open("status.txt", "w") as sUpdate:
+  with open("/var/www/html/TongLab/mTurk/pilot-jspsych-experiment/conditions/status.txt", "w") as sUpdate:
     json.dump(sList, sUpdate)
   
   # Close the file and tell jQuery all went well:
