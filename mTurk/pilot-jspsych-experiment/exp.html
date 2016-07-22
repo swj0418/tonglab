@@ -113,7 +113,7 @@ $(window).resize(function() {
 	}
 });
 
-$(window).unload(function() {
+$(window).on('beforeunload', function() {
   	if (submitted) {
   		var tags = {
     		'id': workerId,
@@ -562,14 +562,14 @@ function SaveData() {
   	SendToServer(workerId, d);
 }
 
-function CreateList(workerId, hitId, assignmentId) {
+function StartList(workerId, hitId, assignmentId) {
 	var dataToServer = {
     	'id': workerId,
     	'experimentName': experimentName,
     	'hitId': hitId,
     	'assignmentId': assignmentId
   	}; 
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/createLists.py",
+  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/startLists.pl",
     	dataToServer
     );
 }
@@ -578,7 +578,7 @@ function CreateList(workerId, hitId, assignmentId) {
 function CompleteList(workerId, hitId, assignmentId) {
   	var tags = {
     	'id': workerId,
-    	'experimentName': ,
+    	'experimentName': experimentName,
     	'hitId': hitId,
     	'assignmentId': assignmentId
   	}; 
@@ -608,7 +608,7 @@ function SendToServer(id, curData) {
 $(window).ready(function () {
   	$('#startExperimentButton').show();
   	$('#loading').hide();
-  	CreateList(GetWorkerId(), GetHitId(), GetAssignmentId());
+  	StartList(GetWorkerId(), GetHitId(), GetAssignmentId());
 });
 
 $(function() {

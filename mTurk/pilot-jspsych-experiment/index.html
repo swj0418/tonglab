@@ -61,6 +61,10 @@
 				display: none;
 			}
 
+			#full {
+				display: none;
+			}
+
 			#button {
 				display: none;
 			}
@@ -123,7 +127,7 @@
 				    	<b>Warning</b>: Please disable pop-up blockers before continuing.
 				    </div>
 							    
-			    	<button type="button" onClick="openwindow();">
+			    	<button id="button" type="button" onClick="openwindow();">
 					  	Open Experiment
 					</button>	
 			</div>		
@@ -158,23 +162,22 @@
 	var hitId = GetHitId();
 	var workerId = GetWorkerId();
 	var assignmentId = GetAssignmentId();
-	var status;
+	var statusStr;
 	var statusIndex = -1;
 
 	function openwindow() {
 		popup = window.open('exp.html?hitId=' + hitId + '&assignmentId=' + assignmentId + '&workerId=' + workerId + '&statusIndex=' + statusIndex,'Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
 	}
 	
-	function OpenStatus(workerId) {
-		var repeat;
+	function OpenStatus() {
 		var listRequest = new XMLHttpRequest();
 		listRequest.onreadystatechange = function() {
 			if((listRequest.readyState === 4) && (listRequest.status === 200)) {
-				status = JSON.parse(listRequest.responseText);
-				for (var i = 0; i < status.length; i++) {
-					if (status[i] == 0) {
+				statusStr = JSON.parse(listRequest.responseText);
+				for (var i = 0; i < statusStr.length; i++) {
+					if (statusStr[i] == 0) {
 						statusIndex = i;
-						break
+						break;
 					}
 				}
 				$("#button").show();
@@ -182,6 +185,7 @@
 					$("#accepted").hide();
 					$("#preview").hide();
 					$("#error").hide();
+					$("#button").hide();
 					$("#full").show();
 				}
 			}
@@ -190,10 +194,35 @@
 		listRequest.send();
 	}
 
+	function OpenParticipants() {
+		var repeat;
+		var partRequest = new XMLHttpRequest();
+		partRequest.onreadystatechange = function() {
+			if((partRequest.readyState === 4) && (partRequest.status === 200)) {
+				partStr = JSON.parse(partRequest.responseText);
+				for (var i = 0; i < partStr.length; i++) {
+					if (partStr[i][0] == hitId) {
+						statusIndex = i;
+						repeat = true;
+						$("#button").show();
+						break;
+					}
+				}
+				if (!repeat) {
+					OpenStatus();
+				}
+			}
+		}
+		partRequest.open('GET', 'conditions/participants.txt', true);
+		partRequest.send();
+	}
+
 	if (IsOnTurk() && IsTurkPreview()) {
 		$("#accepted").hide();
 		$("#preview").show();
 	}
+
+	OpenParticipants();
 </script>
 
 <noscript>
