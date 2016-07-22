@@ -41,7 +41,7 @@ console.log("Version 1.0.1");
 /* Display statistics seem to suggest a common screen resolution of 
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
 600mm distance from center of screen */
-
+var experimentName = 'pilot';
 var displayTime = 200;
 var isiTime = 1000;
 var preShowTime = 500;
@@ -54,6 +54,7 @@ var numSetSize = setSize.length;
 var randTime = new Date();
 var randSeed = randTime.getTime();
 var startExpTime;
+var submitted = false;
 
 /* Seed selection based on current date (randTime.getTime()) */
 Math.seedrandom(randSeed);
@@ -110,6 +111,20 @@ $(window).resize(function() {
 		$("#continuousStimulus").css("left", ($("#continuousReport").width() - gaborDim)/2);
 	  	AdjustElements(totalTrials[currentBlock][currentTrial]);
 	}
+});
+
+$(window).unload(function() {
+  	if (submitted) {
+  		var tags = {
+    		'id': workerId,
+    		'experimentName': experimentName,
+    		'hitId': hitId,
+    		'assignmentId': assignmentId
+  		}; 
+  		$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/incompLists.py",
+    		tags
+    	);
+  	}
 });
 
 /* Clears all radio buttons in the instructions */
@@ -555,11 +570,37 @@ function SaveData() {
   	SendToServer(workerId, d);
 }
 
+function CreateList(workerId, hitId, assignmentId) {
+	var dataToServer = {
+    	'id': workerId,
+    	'experimentName': experimentName,
+    	'hitId': hitId,
+    	'assignmentId': assignmentId
+  	}; 
+  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/createLists.py",
+    	dataToServer
+    );
+}
+
+/* Send completion indication to the server: */
+function CompleteList(workerId, hitId, assignmentId) {
+  	var tags = {
+    	'id': workerId,
+    	'experimentName': ,
+    	'hitId': hitId,
+    	'assignmentId': assignmentId
+  	}; 
+  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/compLists.py",
+    	tags
+    );
+    submitted = true;
+}
+
 /* Send the data to the server as JSON: */
 function SendToServer(id, curData) {
   	var dataToServer = {
     	'id': id,
-    	'experimentName': 'pilot',
+    	'experimentName': experimentName,
     	'curData': JSON.stringify(curData)
   	}; 
   	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/save.pl",
@@ -572,22 +613,10 @@ function SendToServer(id, curData) {
 	});
 }
 
-/* Send completion indication to the server: */
-function CompleteList(workerId, hitId, assignmentId) {
-  	var tags = {
-    	'id': workerId,
-    	'experimentName': 'pilot',
-    	'hitId': hitId,
-    	'assignmentId': assignmentId
-  	}; 
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/compLists.py",
-    	tags
-    );
-}
-
 $(window).ready(function () {
   	$('#startExperimentButton').show();
   	$('#loading').hide();
+  	CreateList(GetWorkerId(), GetHitId(), GetAssignmentId());
 });
 
 $(function() {
