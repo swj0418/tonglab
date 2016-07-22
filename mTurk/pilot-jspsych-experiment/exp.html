@@ -216,16 +216,8 @@ function ChangeToGabor() {
 
 function ReadConditions() {
 	var fileNum;
-	var listRequest = new XMLHttpRequest();
-	listRequest.onreadystatechange = function() {
-		if((listRequest.readyState === 4) && (listRequest.status === 200)) {
-			status = listRequest.responseText;
-			fileNum = AvailableConditions(status);
-		}
-	}
-	listRequest.open('GET', 'conditions/status.txt', true);
-	listRequest.send();
-
+	var statusIndex = GetStatusIndex();
+	var fileLoc = 'conditions/data' + statusIndex + '.txt';
 	var dataRequest = new XMLHttpRequest();
 	dataRequest.onreadystatechange = function() {
 		if((dataRequest.readyState === 4) && (dataRequest.status === 200)) {
