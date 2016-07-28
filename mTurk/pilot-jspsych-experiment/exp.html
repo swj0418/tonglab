@@ -72,6 +72,13 @@ var experimentName = 'pilot';
 var workerId = GetWorkerId();
 var hitId = GetHitId();
 var assignmentId = GetAssignmentId();
+/* tags used to keep out external interference of logging files */
+var tags = {
+    	'id': workerId,
+    	'experimentName': experimentName,
+    	'hitId': hitId,
+    	'assignmentId': assignmentId
+    }; 
 /* display time of stimulus array */
 var displayTime = 200;
 /* length of retention period */
@@ -188,17 +195,16 @@ $(window).on('beforeunload', function(){
 /* if user chooses to leave the assignment, server
 is notified to record the participant as incomplete */
 $(window).on('unload', function(){
-	/* tags used to keep out external interference of logging files */
-	var tags = {
-    	'id': workerId,
-    	'experimentName': experimentName,
-    	'hitId': hitId,
-    	'assignmentId': assignmentId
-  	}; 
-  	/* calls script file to run on server */
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/incompLists.pl",
-    	tags
-    );
+	/* does not overwrite completion upon unload */
+	if (!submitted){
+		/* calls script file to run on server */
+	    $.ajax({
+	    	type: 'POST',
+	    	async: false,
+	    	url: 'https://mturk.psy.vanderbilt.edu/cgi-bin/incompLists.pl',
+	    	data: tags
+	    });
+	}
     //logout();
 });
 
@@ -421,6 +427,7 @@ function StartExperiment() {
 	  	return false;
 	}
 	startExpTime = new Date();
+	/* tags used to keep out external interference of logging files */
 	GetSpec();
 	GenerateTrials();
 	ReadConditions();
@@ -438,10 +445,6 @@ function NextTrial() {
 	currentTrial++;
 	$('#showTrial').show();
   	if (currentTrial>=totalTrials[currentBlock].length) {
-  		$(document).bind('keyup.startTrial', 'space', function(e) { 
-	    	$(document).unbind('keyup.startTrial');
-	    	ShowTrial(trialStruct);
-    	});
     	if (currentBlock==totalTrials.length-1) {
 	    	$('#showTrial').hide();
 	      	Done();
@@ -645,33 +648,24 @@ function SaveData() {
     	"comments": $('#comments').val(),
     	"trialStruct": totalTrials
   	};
-  	CompleteList(workerId, hitId, curID);
+  	CompleteList();
   	SendToServer(workerId, d);
 }
 
-function StartList(workerId, hitId, assignmentId) {
-	var tags = {
-    	'id': workerId,
-    	'experimentName': experimentName,
-    	'hitId': hitId,
-    	'assignmentId': assignmentId
-  	}; 
+function StartList() {
   	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/startLists.pl",
     	tags
     );
 }
 
 /* Send completion indication to the server: */
-function CompleteList(workerId, hitId, assignmentId) {
-  	var tags = {
-    	'id': workerId,
-    	'experimentName': experimentName,
-    	'hitId': hitId,
-    	'assignmentId': assignmentId
-  	}; 
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/compLists.py",
-    	tags
-    );
+function CompleteList() {
+  	$.ajax({
+    	type: 'POST',
+    	async: false,
+    	url: 'https://mturk.psy.vanderbilt.edu/cgi-bin/compLists.pl',
+    	data: tags
+    });
     submitted = true;
 }
 
@@ -705,7 +699,7 @@ $(window).ready(function () {
     });
   	$('#startExperimentButton').show();
   	$('#loading').hide();
-  	StartList(GetWorkerId(), GetHitId(), GetAssignmentId());
+  	StartList();
 });
 
 $(function() {
