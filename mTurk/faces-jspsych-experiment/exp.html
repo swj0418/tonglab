@@ -1,116 +1,72 @@
 <html>
-<!-- Title seen on tabs -->
 <title>TongLab: Experiment</title>
-
-<!-- Icon seen on tabs -->
 <link rel="icon" type="image/gif" href="static/favicon.gif">
-
-<!-- Background color chosen to match window backgrounds
- and element background colors -->
-<body style="background-color:rgb(128,128,128);margin:0">
+<body style="background-color:rgb(0,0,0);margin:0">
 <head></head>
-
-<!-- Loads all associated libraries and scripts: noteable
- include jQuery, jQuery Rotate, and TimTurkTools.js -->
 <script src="static/lib/jquery-3.0.0.min.js"></script>
 <script src="static/lib/jQueryRotate.js"></script>
 <script src="static/lib/seedrandom.js"></script>
-<!-- TimTurkTools expanded to allow extraction of HitId
- and statusIndex -->
 <script src="static/lib/TimTurkTools.js"></script>
 <script src="static/js/utils.js"></script>
-
-<!-- Loads all associated style sheets (CSS) -->
 <link rel="stylesheet" type="text/css" href="static/css/experiment.css">
 <link rel="stylesheet" type="text/css" href="static/css/showTrial.css">
 
 <style>
-/* Continuous report screen parameters */
+/* Continuous report screen */
 #continuousReport {
-	/* Encompass entire window width and 
-	adjust to size changes */
 	width: 100%;
-	/* Higher percentage for max height expands 
-	vertical size and introduces scrolling */
 	max-height: 80%;
-	/* rgb chosen as the same color background as
-	the gabor and bar elements */
-	background: rgb(128,128,128);
+	/* border: 1px solid black; */
+	background: rgb(0,0,0);
 	margin: 40px auto;
-	/* relative positioning as the window is 
-	within 'body' */
 	position: relative;
 	display: none;
 }
 
-/* Continuous stimulus parameters */
+
 #continuousStimulus {
-	/* absolute positions element within 
-	continuousReport */
-	position: absolute; 
-	display: none;
+	width: 200px;
+	height: 200px;
+	background-image: url('static/images/combinedFaces.png');
+	background-position:0px 0px;
+	position: absolute;
 }
 
-/* Cue selection in continuousReport parameters */
 #targetSelect {
-	/* absolute positions element within 
-	continuousReport */
 	position: absolute;
 }
 
 </style>
 
 <script>
-console.log("Version 1.1.0");
+console.log("Version 1.0.1");
 /* Options: */
 /* Display statistics seem to suggest a common screen resolution of 
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
 600mm distance from center of screen */
-/* experiment name used in saved data folder name */
 var experimentName = 'pilot';
-/* get Turk identifiers from URL */
-var workerId = GetWorkerId();
-var hitId = GetHitId();
-var assignmentId = GetAssignmentId();
-/* display time of stimulus array */
 var displayTime = 200;
-/* length of retention period */
 var isiTime = 1000;
-/* length of time before stimulus 
-display after response */
 var preShowTime = 500;
-/* length of time of cue display 
-before response controls */
-var reportShowTime = 200;
-/* number of practice trials per set size */
+var reportShowTime = 1000;
 var practiceTrialsPerSS = 2;
-/* number of trials in actual run, this should 
-match the number within the trial sequence files */
 var numTrials = 40;
-/* set size numbers placed inside */
 var setSize = [1, 2, 3, 6];
-/* set number of set sizes to variable */
 var numSetSize = setSize.length;
-/* create new Date object to get a time based seed */
+// var numTrialsPerBlock = [practiceTrialsPerSS * numSetSize, practiceTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize, blockTrialsPerSS * numSetSize];
 var randTime = new Date();
-/* assign seed value to possibly be 
-recorded in data file */
 var randSeed = randTime.getTime();
-/* startTime variable for recording session times */
 var startExpTime;
-/* determine whether user completed the task
- and should be listed as such on the server */
 var submitted = false;
 
 /* Seed selection based on current date (randTime.getTime()) */
 Math.seedrandom(randSeed);
 
 /* Pregenerated trial arrays */
-/* contains practice trial information */
+var status;
+var conditions;
 var practiceTrials = [];
-/* contains processed trial condition information */
 var genTrials = [];
-/* contains genTrials and practiceTrials */
 var totalTrials = [];
 
 /* Pointers for where we are in the experiment: */
@@ -132,18 +88,14 @@ var itemRadius = Math.floor(pixelsPerDegree);
 var itemDim = 2 * itemRadius;
 
 /* Target location within eccentricity values */
-/* minimum angle between element centers to avoid overlap */
 var minAngle_centers = 38;
-/* eccentricity distance visual angle */
 var eccenAngle = 4;
-/* visual angle conversion */
 var eccenDist = eccenAngle * pixelsPerDegree;
 
-/* Target canvas circle offset used 
-with cue selection circle */
+/* Target canvas circle offset */
 var circMargin = 2;
 
-/* Fixation visual angle degrees */
+/* Fixation angle degrees */
 var outCircle = 0.2432;
 var outLine = 0.0541;
 var inCircle = 0.0541;
@@ -151,102 +103,68 @@ var inCircle = 0.0541;
 /* Unit conversions */
 var inchTomm = 25.4;
 
-/* Turk assignment id written within URL used 
-for external Turk submission */
 $('#assignmentId').val(GetAssignmentId());
 
-/* lines adjust element x,y locations upon 
-window resize event if the experiment has started,
-currentTrial != -1 */
 $(window).resize(function() {
-	/* if the experiment hasn't started, 
-	currentTrial == -1 and startExpTime == null, 
-	locations of stimulus arrays, continuous stimulus, 
-	continuousReport and showTrial window sizes 
-	can not be adjusted */
 	if (startExpTime != null) {
-		/* adjust center x,y values based on new window resolution */
 		centerX = $(window).width()/2, centerY = $(window).height()/2;
-		/* adjust continuousReport window margin to be centered */
 	  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
-	  	/* adjust showTrial window margin to be centered */
 	  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
-	  	/* adjust continuousStimulus element left,top values to be centered */
 	  	$("#continuousStimulus").css("top", ($("#continuousReport").height() - itemDim)/2);
 		$("#continuousStimulus").css("left", ($("#continuousReport").width() - itemDim)/2);
-		/* move array elements and cue by changing top,left values */
 	  	AdjustElements(totalTrials[currentBlock][currentTrial]);
 	}
 });
 
-/* function to run before user reloads,
-closes, or directs out from experiment */
-$(window).on('beforeunload', function(){
-    return 'Are you sure you want to leave? You may not be able to restart the assignment and have to return the HIT.';
-});
-
-/* if user chooses to leave the assignment, server
-is notified to record the participant as incomplete */
-$(window).on('unload', function(){
-	/* tags used to keep out external interference of logging files */
-	var tags = {
-    	'id': workerId,
-    	'experimentName': experimentName,
-    	'hitId': hitId,
-    	'assignmentId': assignmentId
-  	}; 
-  	/* calls script file to run on server */
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/incompLists.pl",
-    	tags
-    );
-    //logout();
+$(window).on('beforeunload', function() {
+  	if (submitted) {
+  		var tags = {
+    		'id': workerId,
+    		'experimentName': experimentName,
+    		'hitId': hitId,
+    		'assignmentId': assignmentId
+  		}; 
+  		$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/incompLists.py",
+    		tags
+    	);
+  	}
 });
 
 /* Clears all radio buttons in the instructions */
 function ClearAll() { 
-	/* clears all 'radio' type buttons to unchecked */
 	Array.prototype.slice.apply(document.querySelectorAll("input[type='radio']")).map(function(e){ e.checked = false });
-	/* rechecks screenSize and viewingDistance to default values */
 	$("#screenSize").prop('checked', true);
 	$("#viewingDistance").prop('checked', true);
 }
 
-/* retrieves other value inputted in text box and 
-sets the value to SSother */
 function ChangeRadioOther() {
 	var other= document.getElementById("SSother");
 	other.value=document.getElementById("inputother").value;
 }
 
-/* Gets screen size, viewing distance choice from instructions, sets
-screen size and viewing distance */
+/* Gets viewing distance choice from instructions, sets distFromScreen*/
 function GetSpec() {
-	/* get viewing distance (vd) value */
 	var vdValue = $('input[name=VD]:checked').val();
  	if (vdValue != "0") {
- 		/* calculate mm value from vdValue */
 		distFromScreen = 10 * (36 + (10 * (vdValue)));
   	}
-  	/* call for other category */
   	ChangeRadioOther();
-  	/* get screen size (ss) value */
   	var ssValue = $('input[name=SS]:checked').val();
-  	/* check if other was selected */
+  	console.log(ssValue);
+  	console.log(isNumber(ssValue));
   	if (isNumber(ssValue)) {
   		horzLength = Math.floor(GetHorzLength(ssValue));
   	}
-  	/* apply new conditions */
   	UpdateElements();
 }
 
-/* calculates horizontal length of participant based on 
-provided diagonal length and aspect ratio from resolution */
 function GetHorzLength(screenSize) {
 	var horizontal = screenSize * inchTomm * Math.cos(Math.atan(screen.height/screen.width));
+	console.log(horizontal);
 	return horizontal;
 }
 
-/* Apply new environment conditions to item dimensions and fixation */
+/* Apply new environment conditions to gabor patch dimensions and fixation */
 function UpdateElements() {
 	oppLength = horzLength/2;
 	totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
@@ -280,6 +198,8 @@ function DrawFixation(element) {
 	element.height = itemDim;
 	var ctx = element.getContext("2d");
 	ctx.beginPath();
+	ctx.strokeStyle="#FFFFFF";
+	ctx.fillStyle ="#FFFFFF";
 	//ctx.arc(itemRadius,itemRadius,eccenDist,0,2*Math.PI);
 	ctx.arc(itemRadius,itemRadius,outCircle * pixelsPerDegree,0,2*Math.PI);
 	//ctx.lineWidth = outLine * pixelsPerDegree;
@@ -301,8 +221,7 @@ function ChangeToGabor() {
 
 function ReadConditions() {
 	var fileNum;
-	var statusIndex = GetStatusIndex();
-	var fileLoc = 'conditions/data' + statusIndex + '.txt';
+	var fileLoc = 'conditions/data.txt';
 	var dataRequest = new XMLHttpRequest();
 	dataRequest.onreadystatechange = function() {
 		if((dataRequest.readyState === 4) && (dataRequest.status === 200)) {
@@ -438,10 +357,6 @@ function NextTrial() {
 	currentTrial++;
 	$('#showTrial').show();
   	if (currentTrial>=totalTrials[currentBlock].length) {
-  		$(document).bind('keyup.startTrial', 'space', function(e) { 
-	    	$(document).unbind('keyup.startTrial');
-	    	ShowTrial(trialStruct);
-    	});
     	if (currentBlock==totalTrials.length-1) {
 	    	$('#showTrial').hide();
 	      	Done();
@@ -610,7 +525,7 @@ function ShowContinuousReport(trialStruct) {
 	    
 	    $("#continuousStimulus").css("top", ($("#continuousReport").height() - itemDim)/2);
 	    $("#continuousStimulus").css("left", ($("#continuousReport").width() - itemDim)/2);
-		$("#gaborCont").rotate(angleDeg + randAdj);
+		//$("#gaborCont").rotate(angleDeg + randAdj);
 	});
 
 	$("#continuousReport").show();
@@ -618,6 +533,21 @@ function ShowContinuousReport(trialStruct) {
 	e.pageX = mouseX;
 	e.pageY = mouseY;
 	$(document).trigger(e);
+}
+
+
+function SetEmotion(id, num) {
+  	xOffset = num*250;
+  	yOffset = 0;
+  	while (xOffset >= 250*30) {
+    	yOffset += 250;
+    	xOffset -= 250*30;
+  	}
+	var deg = 0;
+	$(id).css({'transform':'rotate('+deg+'deg)', 
+		'-ms-transform':'rotate('+deg+'deg)', 
+		'-webkit-transform':'rotate('+deg+'deg)'});
+  	$(id).css({"background-position": -xOffset+"px " + -yOffset+"px"});
 }
 
 /* Done with the experiment; wait for comments and for them to hit Save */
@@ -632,6 +562,8 @@ function SaveData() {
   	$('#assignmentId').val(GetAssignmentId());
   	var curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " + 
   	"are on Turk, so you're probably testing. Enter an ID to save your data with:", "id");
+  	var workerId = GetWorkerId();
+  	var hitId = GetHitId();
   	d = { 
 	    "curID": curID,
     	"workerID": workerId,
@@ -650,14 +582,14 @@ function SaveData() {
 }
 
 function StartList(workerId, hitId, assignmentId) {
-	var tags = {
+	var dataToServer = {
     	'id': workerId,
     	'experimentName': experimentName,
     	'hitId': hitId,
     	'assignmentId': assignmentId
   	}; 
   	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/startLists.pl",
-    	tags
+    	dataToServer
     );
 }
 
@@ -692,17 +624,7 @@ function SendToServer(id, curData) {
 	});
 }
 
-function stopNavigate(){    
-    $(window).off('beforeunload');
-}
-
 $(window).ready(function () {
-	$('a').on('mousedown', stopNavigate);
-    $('a').on('mouseleave', function () {
-           $(window).on('beforeunload', function(){
-                  return 'Are you sure you want to leave? You may not be able to restart the assignment and have to return the HIT.';
-           });
-    });
   	$('#startExperimentButton').show();
   	$('#loading').hide();
   	StartList(GetWorkerId(), GetHitId(), GetAssignmentId());
@@ -835,12 +757,12 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 <div id="continuousReport">
 <canvas id="fixationCont" class="fixation">
 Your browser does not support the HTML5 canvas tag.</canvas>
-<div id="continuousStimulus"><img id="gaborCont" src="static/images/gaborCont.png" alt="response" class="gabor" width="100"></div>
+<div id="continuousStimulus"></div>
 <div id="targetSelect"><canvas id="circSelect" width="200" height="200">
 Your browser does not support the HTML5 canvas tag.</canvas></div>
 </div>
 
-<!-- http://lorempixel.com/400/200 -->
-</div>
+<!-- preload images -->
+<img src="static/images/combinedFaces.png" style="width: 100px; display:none">
 </body>
 </html>

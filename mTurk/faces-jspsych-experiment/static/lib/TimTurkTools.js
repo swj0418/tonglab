@@ -3,9 +3,14 @@ function GetWorkerId() {
 	return workerId;
 }	
 
+function GetStatusIndex() {
+	var statusIndex = turkGetParam( 'statusIndex', 'NONE' );
+	return statusIndex;
+}	
+
 function IsTurkPreview() {
 	return GetWorkerId() == "NONE";
-}	
+}
 
 function IsOnTurk() {
   try {
