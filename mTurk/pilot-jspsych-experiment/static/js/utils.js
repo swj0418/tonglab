@@ -2,6 +2,12 @@ function isNumber(n) {
 	return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
+function pad(num, size) {
+    var s = num+"";
+    while (s.length < size) s = "0" + s;
+    return s;
+}
+
 /* Make sure all numbers in an array are between 0 and 360: */
 function wrap(v) {
   	for (var i=0; i<v.length; i++) {

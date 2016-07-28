@@ -308,22 +308,39 @@ function ChangeToGabor() {
 function ReadConditions() {
 	var fileNum;
 	var statusIndex = GetStatusIndex();
-	var fileLoc = 'conditions/data' + statusIndex + '.txt';
+	var statusIndexStr = pad(statusIndex, 3);
+	console.log(statusIndexStr);
+
+	var pracfileLoc = 'conditions/CounterBalance_prac/bar_SS6_10display_subj' + statusIndex + '.txt';
+	var pracDataRequest = new XMLHttpRequest();
+	pracDataRequest.onreadystatechange = function() {
+		if((pracDataRequest.readyState === 4) && (pracDataRequest.status === 200)) {
+			conditions = pracDataRequest.responseText;
+			ProcessConditions(practiceTrials);
+		}
+	}
+	pracDataRequest.open('GET', pracfileLoc, true);
+	pracDataRequest.send();
+
+	var fileLoc = 'conditions/CounterBalance/bar_SS6_96display_subj' + statusIndex + '.txt';
 	var dataRequest = new XMLHttpRequest();
 	dataRequest.onreadystatechange = function() {
 		if((dataRequest.readyState === 4) && (dataRequest.status === 200)) {
 			conditions = dataRequest.responseText;
-			ProcessConditions();
+			ProcessConditions(genTrials);
 		}
 	}
-	dataRequest.open('GET', 'conditions/data.txt', true);
+	dataRequest.open('GET', fileLoc, true);
 	dataRequest.send();
 }
 
-function ProcessConditions() {
-	var displayID;
+function ProcessConditions(trialStruct) {
+	var subjID;
+	var prac;
+	var trial = [];
 	var stimtype;
 	var setsize;
+	var displayID;
 	var target;
 	var itemOrients = [];
 	var curAngles = [];
@@ -332,23 +349,29 @@ function ProcessConditions() {
 	conditionStream = conditions.split(/\s+/);
 	numValuesPerTrial = (conditionStream.length - 1)/numTrials;
 	for (var i = 0; i < numTrials; i++) {
-		displayID = parseFloat(conditionStream[i * numValuesPerTrial]);
-		stimtype = parseFloat(conditionStream[i * numValuesPerTrial + 1]);
-		setsize = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
-		target = parseFloat(conditionStream[i * numValuesPerTrial + 3]) - 1;
+		subjID = parseFloat(conditionStream[i * numValuesPerTrial]);
+		prac = parseFloat(conditionStream[i * numValuesPerTrial + 1]);
+		trial[i] = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
+		stimtype = parseFloat(conditionStream[i * numValuesPerTrial + 3])
+		setsize = parseFloat(conditionStream[i * numValuesPerTrial + 4]);
+		displayID = parseFloat(conditionStream[i * numValuesPerTrial + 5]);
+		target = parseFloat(conditionStream[i * numValuesPerTrial + 6]) - 1;
 		for (var j = 0; j < setsize; j++) {
-			itemOrients[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 4]);
-			curAngles[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 10]);
+			itemOrients[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 7]);
+			curAngles[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 13]);
 		}
 		curCoordinates = toCoordinates(curAngles);
-		genTrials.push({'displayID': displayID, 
+		trialStruct.push({'subjID': subjID,
+						'prac': prac,
+						'trial': trial, 
 		                'stimtype': stimtype, 
 		                'setSize': setsize,
+		                'displayID': displayID,
 						'targetIndex': target,
 						'items': itemOrients,
 						'randAngles': curAngles,
-						'randSpacings': curCoordinates,
-			            'isPractice': 0});
+						'randSpacings': curCoordinates
+					});
 		itemOrients = [];
 		curAngles = [];
 		curCoordinates = [];
@@ -388,38 +411,6 @@ function toCoordinates(angleSpacings) {
 	return curCoordinates;
 }
 
-/* Generate trials: Seed the random number generator. */
-function GenerateTrials() {
-	var startAngle;
-	var itemOrients = [];
-	var curAngles = [];
-	var curCoordinates = [];
-	var targetIndex;
-
-	for (var i=0; i<numSetSize; i++) {
-		for (var j = 0; j<practiceTrialsPerSS; j++) {
-			startAngle = Math.floor(Math.random()*360);
-		    for (var k=0; k<setSize[i]; k++) {
-		        itemOrients.push(Math.floor(Math.random()*360));
-		    }
-		    curAngles = randSpacings(setSize[i], startAngle);
-		    curCoordinates = toCoordinates(curAngles);
-		    targetIndex = Math.floor(Math.random() * setSize[i]);
-		    practiceTrials.push({'stimtype': 2, 
-			                    'setSize': setSize[i],
-			    				'targetIndex': targetIndex,
-			    				'items': itemOrients,
-			    				'randAngles': curAngles,
-			    				'randSpacings': curCoordinates,
-			    				'startAngle': startAngle,
-			                    'isPractice': 1});
-		    itemOrients = [];
-		    curCoordinates = [];
-		}
-	}
-	practiceTrials = Shuffle(practiceTrials);
-}
-
 /* Start the experiment. Show trials for either bars or gratings first (at random), practice right before testing */
 function StartExperiment() {
 	if (IsOnTurk() && IsTurkPreview()) {
@@ -429,7 +420,6 @@ function StartExperiment() {
 	startExpTime = new Date();
 	/* tags used to keep out external interference of logging files */
 	GetSpec();
-	GenerateTrials();
 	ReadConditions();
 	totalTrials = [practiceTrials, genTrials];
 	$('#instructions').hide();
