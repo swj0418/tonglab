@@ -61,7 +61,7 @@
 </style>
 
 <script>
-console.log("Version 1.1.0");
+console.log("Version 1.1.1");
 /* Options: */
 /* Display statistics seem to suggest a common screen resolution of 
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
@@ -93,7 +93,8 @@ var reportShowTime = 200;
 var practiceTrialsPerSS = 2;
 /* number of trials in actual run, this should 
 match the number within the trial sequence files */
-var numTrials = 40;
+var numTrials_prac = 10;
+var numTrials = 96;
 /* set size numbers placed inside */
 var setSize = [1, 2, 3, 6];
 /* set number of set sizes to variable */
@@ -215,6 +216,8 @@ function ClearAll() {
 	/* rechecks screenSize and viewingDistance to default values */
 	$("#screenSize").prop('checked', true);
 	$("#viewingDistance").prop('checked', true);
+	$('#startExperimentButton').hide();
+  	$('#applySpecsButton').show();
 }
 
 /* retrieves other value inputted in text box and 
@@ -243,6 +246,15 @@ function GetSpec() {
   	}
   	/* apply new conditions */
   	UpdateElements();
+}
+
+function ApplySpecs() {
+	/* tags used to keep out external interference of logging files */
+	GetSpec();
+	ReadConditions();
+	totalTrials = [practiceTrials, genTrials];
+	$('#applySpecsButton').hide();
+	$('#startExperimentButton').show();
 }
 
 /* calculates horizontal length of participant based on 
@@ -308,36 +320,37 @@ function ChangeToGabor() {
 function ReadConditions() {
 	var fileNum;
 	var statusIndex = GetStatusIndex();
-	var statusIndexStr = pad(statusIndex, 3);
+	var subjID = statusIndex + 1;
+	var statusIndexStr = pad(subjID, 3);
 	console.log(statusIndexStr);
 
-	var pracfileLoc = 'conditions/CounterBalance_prac/bar_SS6_10display_subj' + statusIndex + '.txt';
+	var pracfileLoc = 'conditions/CounterBalance_prac/bar_SS6_10display_subj' + statusIndexStr + '.txt';
 	var pracDataRequest = new XMLHttpRequest();
 	pracDataRequest.onreadystatechange = function() {
 		if((pracDataRequest.readyState === 4) && (pracDataRequest.status === 200)) {
 			conditions = pracDataRequest.responseText;
-			ProcessConditions(practiceTrials);
+			ProcessConditions(practiceTrials, numTrials_prac);
 		}
 	}
 	pracDataRequest.open('GET', pracfileLoc, true);
 	pracDataRequest.send();
 
-	var fileLoc = 'conditions/CounterBalance/bar_SS6_96display_subj' + statusIndex + '.txt';
+	var fileLoc = 'conditions/CounterBalance/bar_SS6_96display_subj' + statusIndexStr + '.txt';
 	var dataRequest = new XMLHttpRequest();
 	dataRequest.onreadystatechange = function() {
 		if((dataRequest.readyState === 4) && (dataRequest.status === 200)) {
 			conditions = dataRequest.responseText;
-			ProcessConditions(genTrials);
+			ProcessConditions(genTrials, numTrials);
 		}
 	}
 	dataRequest.open('GET', fileLoc, true);
 	dataRequest.send();
 }
 
-function ProcessConditions(trialStruct) {
+function ProcessConditions(trialStruct, structNum) {
 	var subjID;
 	var prac;
-	var trial = [];
+	var trial;
 	var stimtype;
 	var setsize;
 	var displayID;
@@ -347,11 +360,11 @@ function ProcessConditions(trialStruct) {
 	var curCoordinates = [];
 
 	conditionStream = conditions.split(/\s+/);
-	numValuesPerTrial = (conditionStream.length - 1)/numTrials;
-	for (var i = 0; i < numTrials; i++) {
+	numValuesPerTrial = (conditionStream.length - 1)/structNum
+	for (var i = 0; i < structNum; i++) {
 		subjID = parseFloat(conditionStream[i * numValuesPerTrial]);
 		prac = parseFloat(conditionStream[i * numValuesPerTrial + 1]);
-		trial[i] = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
+		trial = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
 		stimtype = parseFloat(conditionStream[i * numValuesPerTrial + 3])
 		setsize = parseFloat(conditionStream[i * numValuesPerTrial + 4]);
 		displayID = parseFloat(conditionStream[i * numValuesPerTrial + 5]);
@@ -418,10 +431,6 @@ function StartExperiment() {
 	  	return false;
 	}
 	startExpTime = new Date();
-	/* tags used to keep out external interference of logging files */
-	GetSpec();
-	ReadConditions();
-	totalTrials = [practiceTrials, genTrials];
 	$('#instructions').hide();
 	$("#continuousReport").height($(window).height());
   	$("#showTrial").height($(window).height());
@@ -434,6 +443,8 @@ function StartExperiment() {
 function NextTrial() {
 	currentTrial++;
 	$('#showTrial').show();
+	console.log(totalTrials);
+	console.log(totalTrials[currentBlock].length);
   	if (currentTrial>=totalTrials[currentBlock].length) {
     	if (currentBlock==totalTrials.length-1) {
 	    	$('#showTrial').hide();
@@ -569,26 +580,9 @@ function ShowContinuousReport(trialStruct) {
 		    var percentCorrect = (oriDiff/90) * 100;
 		    console.log(percentCorrect);
 
-		    /*
-		    if (trialStruct.isPractice) {
-		    	$('#feedbackError').html("Your error was: " + Math.round(curError) + " deg (aim for less than 20 deg.!)<br><br>Click to continue.");
-		    	var imgNum = Math.round(angleDeg);
-		    	howToSet('#feedbackReported', imgNum);
-		    	imgNum = Math.round(trialStruct.mean);
-		    	howToSet('#feedbackCorrect', imgNum);
-		    	$('#feedback').show();
-		    	$(document).bind('click.feedback', function(e) {
-		        	$('#feedback').hide(); 
-		        	NextTrial();
-		        	$(document).unbind('click.feedback');
-		      	});
-		    } else {
-		    	//NextTrial();
-		    }
-		     */
 		    $("#continuousStimulus").hide();
 		    $("#continuousReport").hide();
-	     	NextTrial();
+	     	FeedbackReport(trialStruct);
 		});
   	}, reportShowTime);
 
@@ -611,6 +605,26 @@ function ShowContinuousReport(trialStruct) {
 	e.pageX = mouseX;
 	e.pageY = mouseY;
 	$(document).trigger(e);
+}
+
+function FeedbackReport(trialStruct) {
+  	/*
+  	if (currentBlock == 1) {
+   		$('#pressKey').html('<u><font color=navy>Practice for Part ' + (currentBlock+1) + ' of 2</font></u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');
+  	}  else {
+    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Press space to start this trial.');  
+  	}
+  	$('#pressKey').show();
+  	*/
+
+  	if(currentTrial == totalTrials[currentBlock].length - 1) {
+  		$(document).bind('keyup.startTrial', 'space', function(e) { 
+	    	$(document).unbind('keyup.startTrial');
+	    	NextTrial();
+    	});
+  	} else {
+  		NextTrial();
+  	}
 }
 
 /* Done with the experiment; wait for comments and for them to hit Save */
@@ -687,8 +701,8 @@ $(window).ready(function () {
                   return 'Are you sure you want to leave? You may not be able to restart the assignment and have to return the HIT.';
            });
     });
-  	$('#startExperimentButton').show();
-  	$('#loading').hide();
+    $('#loading').hide();
+  	$('#applySpecsButton').show();
   	StartList();
 });
 
@@ -769,6 +783,7 @@ console.log(screen.height);
     </tr>
 </table>
 
+<p style='text-align: center'><a href='javascript:ApplySpecs()' id='applySpecsButton'>Apply</a>
 <p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton'>Start Experiment</a>
 <div id="loading" style='text-align: center'><p><img src="static/images/spinner.svg" style="width: 30px; height: 30px"></p>Page elements still loading. Please wait. &nbsp; &nbsp; </div></p>
 
@@ -822,6 +837,11 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 <div id="continuousStimulus"><img id="gaborCont" src="static/images/gaborCont.png" alt="response" class="gabor" width="100"></div>
 <div id="targetSelect"><canvas id="circSelect" width="200" height="200">
 Your browser does not support the HTML5 canvas tag.</canvas></div>
+<!-- <div id="feedback">
+Congratulations! You have completed of the experiment.
+Average Accuracy:
+Bonus points:
+</div> -->
 </div>
 
 <!-- http://lorempixel.com/400/200 -->
