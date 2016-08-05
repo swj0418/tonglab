@@ -58,6 +58,13 @@
 	position: absolute;
 }
 
+#motorPrac {
+	/* absolute positions element within 
+	continuousReport */
+	position: absolute;
+	display: none;
+}
+
 </style>
 
 <script>
@@ -79,6 +86,8 @@ var tags = {
     	'hitId': hitId,
     	'assignmentId': assignmentId
     }; 
+var statusIndex = -1;
+var statusStr;
 /* display time of stimulus array */
 var displayTime = 200;
 /* length of retention period */
@@ -89,10 +98,9 @@ var preShowTime = 500;
 /* length of time of cue display 
 before response controls */
 var reportShowTime = 200;
-/* number of practice trials per set size */
-var practiceTrialsPerSS = 2;
 /* number of trials in actual run, this should 
 match the number within the trial sequence files */
+var numTrials_mPrac = 5;
 var numTrials_prac = 10;
 var numTrials = 96;
 /* set size numbers placed inside */
@@ -106,6 +114,7 @@ recorded in data file */
 var randSeed = randTime.getTime();
 /* startTime variable for recording session times */
 var startExpTime;
+var motorPrac = true;
 /* determine whether user completed the task
  and should be listed as such on the server */
 var submitted = false;
@@ -114,6 +123,7 @@ var submitted = false;
 Math.seedrandom(randSeed);
 
 /* Pregenerated trial arrays */
+var mPracticeTrials = [];
 /* contains practice trial information */
 var practiceTrials = [];
 /* contains processed trial condition information */
@@ -121,7 +131,14 @@ var genTrials = [];
 /* contains genTrials and practiceTrials */
 var totalTrials = [];
 
+var performanceMin = 90;
+
+var mPracPerf = [];
+var PracPerf = [];
+var Perf = [];
+
 /* Pointers for where we are in the experiment: */
+var currentTrial_mPrac = 0;
 var currentTrial = -1;
 var currentBlock = 0;
 
@@ -209,6 +226,136 @@ $(window).on('unload', function(){
     //logout();
 });
 
+function MotorPractice() {
+	$('#instructions').hide();
+	mPracticeTrials = mPracticeGen();
+	mPracSet(mPracticeTrials, currentTrial_mPrac);
+}
+
+function mPracticeGen() {
+	var numTargets = 1;
+	var prac = 1;
+	var stimtype = 2;
+
+	var genStruct = [];
+	var itemOrients = [];
+	var curAngles = [];
+	var curCoordinates = [];
+	var target;
+	var startAngle;
+
+	for (var i=0; i<numTrials_mPrac; i++) {
+		startAngle = Math.floor(Math.random()*360);
+	    itemOrients.push(Math.floor(Math.random()*360));
+	    curAngles = randSpacings(numTargets, startAngle);
+	    curCoordinates = toCoordinates(curAngles);
+	    target = Math.floor(Math.random() * numTargets);
+	    genStruct.push({'prac': prac,
+						'trial': i, 
+		                'stimtype': stimtype, 
+		                'setSize': numTargets,
+						'targetIndex': target,
+						'items': itemOrients,
+						'randAngles': curAngles,
+						'randSpacings': curCoordinates
+					});
+	    itemOrients = [];
+	    curCoordinates = [];
+	}
+	genStruct = Shuffle(genStruct);
+	return genStruct;
+}
+
+function mPracSet(trialStruct, index) {
+	if (trialStruct.stimtype == 1) {
+		ChangeToBar();
+	}
+	if (trialStruct.stimtype == 2) {
+		ChangeToGabor();
+	}
+	$('#motorPrac').css("top", $("#continuousReport").height()/2 - trialStruct[index].randSpacings[0].y - itemDim);
+	$('#motorPrac').css("left", $(window).width()/2 + trialStruct[index].randSpacings[0].x);
+	ccwRotate(trialStruct[index].items[0], '#motorPrac');
+	$('#motorPrac').show();
+	ShowContinuousReport(trialStruct[index]);
+}
+
+function mPracNext() {
+	currentTrial_mPrac++;
+  	if (currentTrial_mPrac>=numTrials_mPrac) {
+    	mPracticeFeedbackReport();
+  	} else {
+  		mPracSet(mPracticeTrials, currentTrial_mPrac);
+  	}
+}
+
+function mPracticeFeedbackReport() {
+	var perfSum = 0;
+	var performance;
+	for (var i = 0; i<mPracPerf.length; i++) {
+		perfSum += mPracPerf[i];
+	}
+	performance = perfSum/mPracPerf.length;
+	console.log(performance);
+	if (performance > performanceMin) {
+		console.log("Congratulations!");
+		NextTrial();
+	} else {
+		currentTrial_mPrac = 0;
+		mPracticeTrials = [];
+		MotorPractice();
+	}
+}
+
+function OpenStatus() {
+	var listRequest = new XMLHttpRequest();
+	listRequest.onreadystatechange = function() {
+		if((listRequest.readyState === 4) && (listRequest.status === 200)) {
+			statusStr = JSON.parse(listRequest.responseText);
+			for (var i = 0; i < statusStr.length; i++) {
+				if (statusStr[i] == 0) {
+					statusIndex = i;
+					break;
+				}
+			}
+			$("#button").show();
+			if (statusIndex == -1) {
+				$("#accepted").hide();
+				$("#preview").hide();
+				$("#error").hide();
+				$("#button").hide();
+				$("#full").show();
+			}
+		}
+	}
+	listRequest.open('GET', 'conditions/status.txt', false);
+	listRequest.send();
+}
+
+function OpenParticipants() {
+	var repeat;
+	var partRequest = new XMLHttpRequest();
+	partRequest.onreadystatechange = function() {
+		if((partRequest.readyState === 4) && (partRequest.status === 200)) {
+			partStr = JSON.parse(partRequest.responseText);
+			for (var i = 0; i < partStr.length; i++) {
+				if (partStr[i][0] == workerId) {
+					statusIndex = i;
+					repeat = true;
+					$("#button").show();
+					break;
+				}
+			}
+			if (!repeat) {
+				OpenStatus();
+			}
+		}
+	}
+	partRequest.open('GET', 'conditions/participants.txt', false);
+	partRequest.send();
+}
+
+
 /* Clears all radio buttons in the instructions */
 function ClearAll() { 
 	/* clears all 'radio' type buttons to unchecked */
@@ -248,9 +395,13 @@ function GetSpec() {
   	UpdateElements();
 }
 
+/* function in order to combat async processing with AJAX read request,
+additional time between pressing 'Apply' and 'Start Experiment' will
+hopefully allow the trial sequence file to load and process fully */
 function ApplySpecs() {
 	/* tags used to keep out external interference of logging files */
 	GetSpec();
+	OpenParticipants();
 	ReadConditions();
 	totalTrials = [practiceTrials, genTrials];
 	$('#applySpecsButton').hide();
@@ -319,7 +470,6 @@ function ChangeToGabor() {
 
 function ReadConditions() {
 	var fileNum;
-	var statusIndex = GetStatusIndex();
 	var subjID = statusIndex + 1;
 	var statusIndexStr = pad(subjID, 3);
 	console.log(statusIndexStr);
@@ -432,11 +582,9 @@ function StartExperiment() {
 	}
 	startExpTime = new Date();
 	$('#instructions').hide();
-	$("#continuousReport").height($(window).height());
   	$("#showTrial").height($(window).height());
-	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
-  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2); 
-	NextTrial();
+  	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
+	MotorPractice();
 }
 
 /* Show the next trial or show the done screen if they are finished: */
@@ -563,7 +711,12 @@ function ShowContinuousReport(trialStruct) {
   	var curError = 360;
   	var startTime = new Date();
 
-  	ReportSelection(trialStruct);
+  	$("#continuousReport").height($(window).height());
+  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
+
+  	if (!motorPrac) {
+  		ReportSelection(trialStruct);
+  	}
 
   	setTimeout(function() {
   		document.body.style.cursor = 'auto';
@@ -582,7 +735,15 @@ function ShowContinuousReport(trialStruct) {
 
 		    $("#continuousStimulus").hide();
 		    $("#continuousReport").hide();
-	     	FeedbackReport(trialStruct);
+		    if (motorPrac) {
+		    	$("#motorPrac").hide();
+		    	mPracPerf.push(percentCorrect);
+		    	mPracNext();
+		    } else {
+		    	Perf.push(percentCorrect);
+		    	FeedbackReport(trialStruct);
+		    }
+	     	
 		});
   	}, reportShowTime);
 
@@ -784,7 +945,7 @@ console.log(screen.height);
 </table>
 
 <p style='text-align: center'><a href='javascript:ApplySpecs()' id='applySpecsButton'>Apply</a>
-<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton'>Start Experiment</a>
+<p style='text-align: center'><a href='javascript:MotorPractice()' id='startExperimentButton'>Start Experiment</a>
 <div id="loading" style='text-align: center'><p><img src="static/images/spinner.svg" style="width: 30px; height: 30px"></p>Page elements still loading. Please wait. &nbsp; &nbsp; </div></p>
 
 <!-- Consent statement at bottom: -->
@@ -842,6 +1003,7 @@ Congratulations! You have completed of the experiment.
 Average Accuracy:
 Bonus points:
 </div> -->
+<div id="motorPrac" class="array"><img src="static/images/gaborCont.png" class="gabor" width="100"></div>
 </div>
 
 <!-- http://lorempixel.com/400/200 -->
