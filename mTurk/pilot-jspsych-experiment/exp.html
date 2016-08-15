@@ -25,6 +25,53 @@
 <link rel="stylesheet" type="text/css" href="static/css/showTrial.css">
 
 <style>
+#subject {
+  /*
+  padding:20px; 
+  border:1px dashed black; 
+  background-color: lightgray;
+  */
+  max-width: 600px; 
+  margin: 0 auto; 
+  margin-top: 30px; 
+}
+
+#specifications {
+  /*
+  padding:20px; 
+  border:1px dashed black; 
+  background-color: lightgray;
+  */
+  max-width: 600px; 
+  margin: 0 auto; 
+  margin-top: 30px; 
+  display: none;
+}
+
+#questionnaire {
+  /*
+  padding:20px; 
+  border:1px dashed black; 
+  background-color: lightgray;
+  */
+  max-width: 600px; 
+  margin: 0 auto; 
+  margin-top: 30px; 
+  display: none;
+}
+
+#debrief {
+  /*
+  padding:20px; 
+  border:1px dashed black; 
+  background-color: lightgray;
+  */
+  max-width: 600px; 
+  margin: 0 auto; 
+  margin-top: 30px; 
+  display: none;
+}
+
 /* Continuous report screen parameters */
 #continuousReport {
 	/* Encompass entire window width and 
@@ -226,6 +273,21 @@ $(window).on('unload', function(){
     //logout();
 });
 
+function SpecsScreen() {
+	$('#subject').hide();
+	$('#specifications').show();
+}
+
+function SpecsBack() {
+	$('#specifications').hide();
+	$('#subject').show();
+}
+
+function DebriefScreen() {
+	$('#questionnaire').hide();
+	$('#debrief').show();
+}
+
 function MotorPractice() {
 	$('#instructions').hide();
 	mPracticeTrials = mPracticeGen();
@@ -299,6 +361,7 @@ function mPracticeFeedbackReport() {
 	console.log(performance);
 	if (performance > performanceMin) {
 		console.log("Congratulations!");
+		motorPrac = false;
 		NextTrial();
 	} else {
 		currentTrial_mPrac = 0;
@@ -363,8 +426,6 @@ function ClearAll() {
 	/* rechecks screenSize and viewingDistance to default values */
 	$("#screenSize").prop('checked', true);
 	$("#viewingDistance").prop('checked', true);
-	$('#startExperimentButton').hide();
-  	$('#applySpecsButton').show();
 }
 
 /* retrieves other value inputted in text box and 
@@ -372,6 +433,11 @@ sets the value to SSother */
 function ChangeRadioOther() {
 	var other= document.getElementById("SSother");
 	other.value=document.getElementById("inputother").value;
+}
+
+function ChangeAgeInput() {
+	var other= document.getElementById("age");
+	other.value=document.getElementById("ageInput").value;
 }
 
 /* Gets screen size, viewing distance choice from instructions, sets
@@ -401,11 +467,12 @@ hopefully allow the trial sequence file to load and process fully */
 function ApplySpecs() {
 	/* tags used to keep out external interference of logging files */
 	GetSpec();
-	OpenParticipants();
-	ReadConditions();
+	//OpenParticipants();
+	//ReadConditions();
 	totalTrials = [practiceTrials, genTrials];
-	$('#applySpecsButton').hide();
-	$('#startExperimentButton').show();
+	$('#specifications').hide();
+	$('#instructions').show();
+
 }
 
 /* calculates horizontal length of participant based on 
@@ -583,7 +650,9 @@ function StartExperiment() {
 	startExpTime = new Date();
 	$('#instructions').hide();
   	$("#showTrial").height($(window).height());
+  	$("#continuousReport").height($(window).height());
   	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
+  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
 	MotorPractice();
 }
 
@@ -711,9 +780,6 @@ function ShowContinuousReport(trialStruct) {
   	var curError = 360;
   	var startTime = new Date();
 
-  	$("#continuousReport").height($(window).height());
-  	$("#continuousReport").css("margin-top", (($(window).height())/2) - ($("#continuousReport").height())/2);
-
   	if (!motorPrac) {
   		ReportSelection(trialStruct);
   	}
@@ -790,7 +856,7 @@ function FeedbackReport(trialStruct) {
 
 /* Done with the experiment; wait for comments and for them to hit Save */
 function Done() {
-  	$('#done').show();
+  	$('#questionnaire').show();
 }
 
 /* Save the data to the server (choose what to save) */
@@ -863,7 +929,6 @@ $(window).ready(function () {
            });
     });
     $('#loading').hide();
-  	$('#applySpecsButton').show();
   	StartList();
 });
 
@@ -894,119 +959,334 @@ console.log(screen.height);
 
 <div id="instructions"><h2>Instructions</h2>
 
-<p style='text-align: center'><a href='javascript:ClearAll()' id='clearAllButton'>Clear All</a>
-
-<p>Please choose your screen size <b>(in inches)</b> from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers.</p>
-
-<input id="screenSize" type="radio" name="SS" value="15.6" checked="checked" style="display:none">
-<p style='text-align: center'>
-<input type="radio" id="SS11" name="SS" value="11"><label for="SS11"> 11" </label>
-<input type="radio" id="SS13" name="SS" value="13"><label for="SS13"> 13" </label>
-<input type="radio" id="SS15" name="SS" value="15"><label for="SS15"> 15" </label>
-<input type="radio" id="SS21" name="SS" value="21"><label for="SS21"> 21" </label>
-<input type="radio" id="SS23" name="SS" value="23"><label for="SS23"> 23" </label>
-<input type="radio" id="SSother" name="SS" value="other"><label for="SSother"> Other</label>
-<input id="inputother" type="text" onchange="ChangeRadioOther()"/>
-</p>
-
-<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
-
-<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
-
-<table align="center">
-    <tr>
-        <td>
-        	<label for="VD18">
-            	<img src="static/images/VD18.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
-            </label>
-        </td>
-        <td>
-        	<label for="VD22">
-            	<img src="static/images/VD22.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
-            </label>
-        </td>
-        <td>
-        	<label for="VD26">
-        		<img src="static/images/VD26.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
-        	</label>
-        </td>
-    </tr>
-    <tr>
-        <td style="text-align:center">
-            <input type="radio" id="VD18" name="VD" value="1">
-        </td>
-        <td style="text-align:center">
-            <input type="radio" id="VD22" name="VD" value="2">
-        </td>
-        <td style="text-align:center">
-            <input type="radio" id="VD26" name="VD" value="3">
-        </td>
-    </tr>
-</table>
-
-<p style='text-align: center'><a href='javascript:ApplySpecs()' id='applySpecsButton'>Apply</a>
-<p style='text-align: center'><a href='javascript:MotorPractice()' id='startExperimentButton'>Start Experiment</a>
-<div id="loading" style='text-align: center'><p><img src="static/images/spinner.svg" style="width: 30px; height: 30px"></p>Page elements still loading. Please wait. &nbsp; &nbsp; </div></p>
-
-<!-- Consent statement at bottom: -->
-<div id='consentDiv'><p><u>Consent to Participate in Research:</u></p><p>By answering the following questions, you are participating in a study being performed by cognitive scientists in the Vanderbilt University Psychology Department.  The purpose of this research is to examine human visual performance.</p><p>By participating you are confirming that you are over 18 years of age and have normal or corrected-to-normal vision.</p><p>If you have questions about this research, or if you would like to receive a report of this research when it is completed please contact William Ju at william.h.ju@vanderbilt.edu.</p><p>Your participation in this research is completely voluntary.  If you choose to participate, you may change your mind and leave the study at any time.  Refusal to participate or stopping your participation will involve no penalty or loss of benefits to which you are otherwise entitled.</p><p>You may decline to answer any or all of the following questions. Your anonymity is assured; the researchers who have requested your participation will not receive any personal information about you. </p><p>For questions, concerns, or complaints that are not being addressed by the researcher, or research-related harm contact:  Committee on the Use of Human Subjects in Research at Harvard University, 1414 Massachusetts Avenue, Second Floor, Cambridge, MA  02138. Phone: 617-496-CUHS (2847).  Email: cuhs@fas.harvard.edu</p><p>By continuing, you are confirming that you understand these instructions and conditions of participation.</p></div>
-</div>
-
-<p></p>
-
-</div>
-
-<!-- Start form here to capture comments -->
-<form id="turkSubmit" action="https://workersandbox.mturk.com/mturk/externalSubmit" method="post">
-<input type="hidden" name="assignmentId" id="assignmentId" value="">
-<input type="submit" value="Submit" name="submitButton" id="submitButton" style="display: none">
 <!--
- submit to turk
- https://workersandbox.mturk.com/mturk/externalSubmit
-https://www.mturk.com/mturk/externalSubmit
+	<p style='text-align: center'><a href='javascript:ApplySpecs()' id='applySpecsButton'>Apply</a>
 -->
+	<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton' class="nav">Start Experiment</a>
+		<div id="loading" style='text-align: center'>
+			<p>
+				<img src="static/images/spinner.svg" style="width: 30px; height: 30px">
+			</p>Page elements still loading. Please wait. &nbsp; &nbsp; 
+		</div>
+	</p>
+</div>
 
-<!-- Screen for collecting comments when they are done: -->
-<div id="done"><div id="doneText">Done! Thanks!<br><br>Any comments for us? (Was it fun? Any technical difficulties?)<br><br>
-<textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
-<a href="javascript:SaveData()" id="timSubmit">Submit</a>
-</div><div id="saving">Saving . . .</div></div>
-</form>
+<div id="subject">
+	<h2>Subject Information</h2>
+    <hr>
+
+    <p>Please provide some general demographic information. The information collected for this study will be maintained confidentially, and will be used only for the purposes of this study.</p>
+
+    		<!-- beginning of a question -->
+    		<div class="row question">
+                <div>
+                    <b>Age:</b>
+                </div>
+                <div>
+                	<input type="hidden" id="age" name="age" value="0"><label for="age"></label>
+					<input id="ageInput" type="text" onchange="ChangeAgeInput()"/>
+					<br>
+                    <input type="radio" id="noReport" name="noReport" value="1"><label for="noReport"> I choose not to report </label>
+                </div>
+            </div>
+            <!-- end of a question -->
+            <br>
+            <!-- beginning of a question -->
+            <div class="row question">
+                <div>
+                    <b>Gender:</b>
+                </div>
+                <div>
+                    <select id="gender" name="gender">
+                    	<option value="0" SELECTED>Choose One</option>
+                        <option value="1">Male</option>
+                        <option value="2">Female</option>
+                        <option value="3">I choose not to report</option>
+                    </select>
+                </div>
+            </div>
+            <!-- end of a question -->
+            <br>
+            <!-- beginning of a question -->
+            <div class="row question">
+                <div>
+                    <b>Ethnicity:</b>
+                </div>
+                <div>
+                    <select id="ethnicity" name="ethnicity">
+                    	<option value="0" SELECTED>Choose One</option>
+                        <option value="1">American Indian/Alaska Native</option>
+                        <option value="2">Asian</option>
+                        <option value="3">Native Hawaiian or Other Pacific Islander</option>
+                        <option value="4">Black or African American</option>
+                        <option value="5">White</option>
+                        <option value="6">Hispanic</option>
+                        <option value="7">More Than One Race</option>
+                        <option value="8">Unknown/I choose not to report</option>
+                    </select>
+                </div>
+            </div>
+            <!-- end of a question -->
+            <br>
+            <!-- beginning of a question -->
+            <div class="row question">
+                <div>
+                    <b>Education:</b>
+                </div>
+                <div>
+                    <select id="education" name="education">
+                    	<option value="0" SELECTED>Choose One</option>
+                        <option value="1">No diploma</option>
+                        <option value="2">High school diploma</option>
+                        <option value="3">Trade school</option>
+                        <option value="4">Some college</option>
+                        <option value="5">College Bachelor's degree</option>
+                        <option value="6">Advanced or professional degree</option>
+                        <option value="7">I choose not to report</option>
+                    </select>
+                </div>
+            </div>
+            <!-- end of a question -->
+
+    <br>
+
+    <hr>
+
+    <div class="instructionsnav">
+        <div class="row">
+            <div>
+                <button type="button" id="subject" value="subject" class="nav" onClick="SpecsScreen();">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="specifications">
+	<h2>Viewing Condition Information</h2>
+    <hr>
+
+    <p style='text-align: center'><a href='javascript:ClearAll()' id='clearAllButton' class="nav">Clear All</a>
+
+	<p>Please choose your screen size <b>(in inches)</b> from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers.</p>
+
+	<input id="screenSize" type="radio" name="SS" value="15.6" checked="checked" style="display:none">
+		<p style='text-align: center'>
+			<input type="radio" id="SS11" name="SS" value="11"><label for="SS11"> 11" </label>
+			<input type="radio" id="SS13" name="SS" value="13"><label for="SS13"> 13" </label>
+			<input type="radio" id="SS15" name="SS" value="15"><label for="SS15"> 15" </label>
+			<input type="radio" id="SS21" name="SS" value="21"><label for="SS21"> 21" </label>
+			<input type="radio" id="SS23" name="SS" value="23"><label for="SS23"> 23" </label>
+			<input type="radio" id="SSother" name="SS" value="other"><label for="SSother"> Other</label>
+				<input id="inputother" type="text" onchange="ChangeRadioOther()"/>
+		</p>
+
+	<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
+
+	<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
+
+	<table align="center">
+	    <tr>
+	        <td>
+	        	<label for="VD18">
+	            	<img src="static/images/VD18.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+	            </label>
+	        </td>
+	        <td>
+	        	<label for="VD22">
+	            	<img src="static/images/VD22.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+	            </label>
+	        </td>
+	        <td>
+	        	<label for="VD26">
+	        		<img src="static/images/VD26.png" class="VDanswer" style="max-width:100%; height:auto; width:auto">
+	        	</label>
+	        </td>
+	    </tr>
+	    <tr>
+	        <td style="text-align:center">
+	            <input type="radio" id="VD18" name="VD" value="1">
+	        </td>
+	        <td style="text-align:center">
+	            <input type="radio" id="VD22" name="VD" value="2">
+	        </td>
+	        <td style="text-align:center">
+	            <input type="radio" id="VD26" name="VD" value="3">
+	        </td>
+	    </tr>
+	</table>
+
+    <hr>
+
+	<div class="instructionsnav">
+        <div class="row">
+            <div>
+                <button type="button" id="specsBack" value="specsBack" class="nav" onClick="SpecsBack();">
+                    Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="instructionsnav">
+        <div class="row">
+            <div>
+                <button type="button" id="specsNext" value="specsNext" class="nav" onClick="ApplySpecs();">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Basic structure for a trial: -->
 <div id="showTrial">
-<canvas id="fixationShow" class="fixation">
-Your browser does not support the HTML5 canvas tag.</canvas>
-<div id="elements">
-<div id="item1" class="array"><img id="gaborShow1" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item2" class="array"><img id="gaborShow2" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item3" class="array"><img id="gaborShow3" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item4" class="array"><img id="gaborShow4" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item5" class="array"><img id="gaborShow5" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item6" class="array"><img id="gaborShow6" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item7" class="array"><img id="gaborShow7" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-<div id="item8" class="array"><img id="gaborShow8" src="static/images/gaborCont.png" class="gabor" width="100"></div>
-</div>
-<!--<div id="pressKey">Click anywhere to start this trial.</div>
--->
+	<canvas id="fixationShow" class="fixation"> Your browser does not support the HTML5 canvas tag.</canvas>
+	<div id="elements">
+		<div id="item1" class="array"><img id="gaborShow1" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item2" class="array"><img id="gaborShow2" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item3" class="array"><img id="gaborShow3" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item4" class="array"><img id="gaborShow4" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item5" class="array"><img id="gaborShow5" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item6" class="array"><img id="gaborShow6" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item7" class="array"><img id="gaborShow7" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+		<div id="item8" class="array"><img id="gaborShow8" src="static/images/gaborCont.png" class="gabor" width="100"></div>
+	</div>
+	<!--<div id="pressKey">Click anywhere to start this trial.</div>
+		-->
 </div>
 
 <!-- Structure for continuous report after the trial: -->
 <div id="continuousReport">
-<canvas id="fixationCont" class="fixation">
-Your browser does not support the HTML5 canvas tag.</canvas>
-<div id="continuousStimulus"><img id="gaborCont" src="static/images/gaborCont.png" alt="response" class="gabor" width="100"></div>
-<div id="targetSelect"><canvas id="circSelect" width="200" height="200">
-Your browser does not support the HTML5 canvas tag.</canvas></div>
-<!-- <div id="feedback">
-Congratulations! You have completed of the experiment.
-Average Accuracy:
-Bonus points:
-</div> -->
-<div id="motorPrac" class="array"><img src="static/images/gaborCont.png" class="gabor" width="100"></div>
+	<canvas id="fixationCont" class="fixation"> Your browser does not support the HTML5 canvas tag.</canvas>
+	<div id="continuousStimulus">
+		<img id="gaborCont" src="static/images/gaborCont.png" alt="response" class="gabor" width="100">
+	</div>
+	<div id="targetSelect">
+		<canvas id="circSelect" width="200" height="200"> Your browser does not support the HTML5 canvas tag.</canvas>
+	</div>
+	<!-- <div id="feedback">
+	Congratulations! You have completed of the experiment.
+	Average Accuracy:
+	Bonus points:
+	</div> -->
+	<div id="motorPrac" class="array">
+		<img src="static/images/gaborCont.png" class="gabor" width="100">
+	</div>
 </div>
 
-<!-- http://lorempixel.com/400/200 -->
+<div id="questionnaire">
+	<h2>Post-experiment questionnaire</h2>
+    <hr>
+
+    <p>
+    Congratuations, you are finished! You will be eligible for payment once you answer the following questions.
+    </p>
+
+	<!-- beginning of a question -->
+    <div class="row question">
+        <div>
+            On a scale of 1-10 (where 10 is the most engaged), please rate how <b>ENGAGING</b> you found the visual memory task:
+        </div>
+        <div>
+            <select id="engagement" name="engagement">
+                <option value="10">10 - Very engaging</option>
+                <option value="9">9</option>
+                <option value="8">8</option>
+                <option value="7">7</option>
+                <option value="6">6</option>
+                <option value="5" SELECTED>5 - Moderately</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+                <option value="0">0 - Not engaged</option>
+            </select>
+        </div>
+    </div>
+    <!-- end of a question -->
+
+    <br>
+
+    <!-- beginning of a question -->
+    <div class="row question">
+        <div>
+            On a scale of 1-10 (where 10 is the most difficult), please rate how <b>DIFFICULT</b> you found the visual memory task:
+        </div>
+        <div>
+            <select id="difficulty" name="difficulty">
+                <option value="10">10 - Very difficult</option>
+                <option value="9">9</option>
+                <option value="8">8</option>
+                <option value="7">7</option>
+                <option value="6">6</option>
+                <option value="5" SELECTED>5 - Moderately difficult</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+                <option value="0">0 - Not difficult at all</option>
+            </select>
+        </div>
+    </div>
+    <!-- end of a question -->
+
+    <br>
+
+    <div id="doneText"><br><b>Any comments for us?</b><br><br>
+			<textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
+	</div>
+
+	<hr>
+
+    <div class="instructionsnav">
+        <div class="row">
+            <div>
+                <button type="button" id="debriefNext" value="debriefNext" class="nav" onClick="DebriefScreen();">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div id="debrief">
+	<h2>Debriefing</h2>
+    <hr>
+
+    <p>
+    Thank you for your participation in our study! Your anonymous data makes an important contribution to our understanding of human visual working memory.
+	</p>
+
+	<p>
+	If you have any questions about this research, you may contact the experimenter:
+	</p>
+
+	<b>tonglab@vanderbilt.edu</b>
+
+	<p>
+	To complete the HIT, simply press the button below.
+    </p>
+
+    <hr>
+    <br>
+
+    <!-- Start form here to capture comments -->
+	<form id="turkSubmit" action="https://workersandbox.mturk.com/mturk/externalSubmit" method="post">
+	<input type="hidden" name="assignmentId" id="assignmentId" value="">
+	<input type="submit" value="Submit" name="submitButton" id="submitButton" style="display: none">
+	<!--
+	 submit to turk
+	 https://workersandbox.mturk.com/mturk/externalSubmit
+	https://www.mturk.com/mturk/externalSubmit
+	-->
+
+	<!-- Screen for collecting comments when they are done: -->
+	<a href="javascript:SaveData()" id="timSubmit" class="nav">Submit</a>
+
+	</form>
+</div>
+
 </body>
 </html>
