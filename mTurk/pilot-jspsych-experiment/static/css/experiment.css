@@ -7,7 +7,7 @@ body {
   font-style: bold;
 }
 
-#instructions {
+.test {
   /*
   padding:20px; 
   border:1px dashed black; 
@@ -17,6 +17,18 @@ body {
   max-width: 600px; 
   margin: 0 auto; 
   margin-top: 30px; 
+}
+
+#test1 {
+  display: none;
+}
+
+#test2 {
+  display: none;
+}
+
+#test3 {
+  display: none;
 }
 
 #doneText {

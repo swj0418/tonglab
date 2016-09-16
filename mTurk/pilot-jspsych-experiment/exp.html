@@ -25,38 +25,22 @@
 <link rel="stylesheet" type="text/css" href="static/css/showTrial.css">
 
 <style>
-#subject {
-  /*
+.page {
+/*
   padding:20px; 
   border:1px dashed black; 
   background-color: lightgray;
-  */
+*/
   max-width: 600px; 
   margin: 0 auto; 
-  margin-top: 30px; 
+  margin-top: 30px;
 }
 
 #specifications {
-  /*
-  padding:20px; 
-  border:1px dashed black; 
-  background-color: lightgray;
-  */
-  max-width: 600px; 
-  margin: 0 auto; 
-  margin-top: 30px; 
   display: none;
 }
 
 #questionnaire {
-  /*
-  padding:20px; 
-  border:1px dashed black; 
-  background-color: lightgray;
-  */
-  max-width: 600px; 
-  margin: 0 auto; 
-  margin-top: 30px; 
   display: none;
 }
 
@@ -112,10 +96,33 @@
 	display: none;
 }
 
+.botText {
+	width: 100%;
+ 	text-align: center;
+	top: 400px;
+  	left: 0px;
+  	font-weight: bold;
+  	font-size: 14pt;
+}
+
+#feedback {
+	position: absolute;
+  	display: none;
+}
+
+#average {
+	position: absolute;
+  	display: none;
+}
+
 </style>
 
 <script>
-console.log("Version 1.1.1");
+/* --------------------------------------------------------------------------------------- */
+/* ----------------------------------- Major Variables ----------------------------------- */
+/* --------------------------------------------------------------------------------------- */
+
+console.log("Version 1.2.0");
 /* Options: */
 /* Display statistics seem to suggest a common screen resolution of 
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
@@ -141,15 +148,15 @@ var displayTime = 200;
 var isiTime = 1000;
 /* length of time before stimulus 
 display after response */
-var preShowTime = 500;
+var preShowTime = 1000;
 /* length of time of cue display 
 before response controls */
-var reportShowTime = 200;
+var reportShowTime = 500;
 /* number of trials in actual run, this should 
 match the number within the trial sequence files */
 var numTrials_mPrac = 5;
 var numTrials_prac = 10;
-var numTrials = 96;
+var numTrials = 106;
 /* set size numbers placed inside */
 var setSize = [1, 2, 3, 6];
 /* set number of set sizes to variable */
@@ -162,6 +169,7 @@ var randSeed = randTime.getTime();
 /* startTime variable for recording session times */
 var startExpTime;
 var motorPrac = true;
+var memPrac = true;
 /* determine whether user completed the task
  and should be listed as such on the server */
 var submitted = false;
@@ -171,21 +179,20 @@ Math.seedrandom(randSeed);
 
 /* Pregenerated trial arrays */
 var mPracticeTrials = [];
+var memPracticeTrials = [];
 /* contains practice trial information */
 var practiceTrials = [];
 /* contains processed trial condition information */
 var genTrials = [];
 /* contains genTrials and practiceTrials */
 var totalTrials = [];
-
-var performanceMin = 90;
+var testSeq = ['#test2', '#test3', '#actual'];
 
 var mPracPerf = [];
-var PracPerf = [];
-var Perf = [];
+var blockPerf = [];
 
 /* Pointers for where we are in the experiment: */
-var currentTrial_mPrac = 0;
+var currentTrial_mPrac = -1;
 var currentTrial = -1;
 var currentBlock = 0;
 
@@ -208,6 +215,7 @@ var itemDim = 2 * itemRadius;
 var minAngle_centers = 38;
 /* eccentricity distance visual angle */
 var eccenAngle = 4;
+var textAngle = 1;
 /* visual angle conversion */
 var eccenDist = eccenAngle * pixelsPerDegree;
 
@@ -226,6 +234,10 @@ var inchTomm = 25.4;
 /* Turk assignment id written within URL used 
 for external Turk submission */
 $('#assignmentId').val(GetAssignmentId());
+
+/* --------------------------------------------------------------------------------------- */
+/* ------------------------------------ Window Change ------------------------------------ */
+/* --------------------------------------------------------------------------------------- */
 
 /* lines adjust element x,y locations upon 
 window resize event if the experiment has started,
@@ -246,8 +258,13 @@ $(window).resize(function() {
 	  	/* adjust continuousStimulus element left,top values to be centered */
 	  	$("#continuousStimulus").css("top", ($("#continuousReport").height() - itemDim)/2);
 		$("#continuousStimulus").css("left", ($("#continuousReport").width() - itemDim)/2);
+		$(".botText").css("top", centerY + (pixelsPerDegree * textAngle));
 		/* move array elements and cue by changing top,left values */
-	  	AdjustElements(totalTrials[currentBlock][currentTrial]);
+	  	if(!motorPrac) {
+	  		AdjustElements(totalTrials[currentBlock][currentTrial]);
+	  	} else {
+	  		mPracSet(mPracticeTrials[currentTrial_mPrac]);
+	  	}
 	}
 });
 
@@ -273,8 +290,27 @@ $(window).on('unload', function(){
     //logout();
 });
 
+/* --------------------------------------------------------------------------------------- */
+/* ------------------------------------- Subject Info ------------------------------------ */
+/* --------------------------------------------------------------------------------------- */
+
+function ChangeAgeInput() {
+	var other= document.getElementById("age");
+	other.value=document.getElementById("ageInput").value;
+}
+
+/* --------------------------------------------------------------------------------------- */
+/* ------------------------------------ Specifications ----------------------------------- */
+/* --------------------------------------------------------------------------------------- */
+
+/* Default selections for screen size and resolution */
+var distFromScreen = 600; // measurements in mm
+var cardLen = 85.6; // measurements in mm
+var barLen = 360;
+
 function SpecsScreen() {
 	$('#subject').hide();
+	specInit();
 	$('#specifications').show();
 }
 
@@ -288,16 +324,143 @@ function DebriefScreen() {
 	$('#debrief').show();
 }
 
+/* Clears all radio buttons in the instructions */
+function ClearAll() { 
+	/* clears all 'radio' type buttons to unchecked */
+	Array.prototype.slice.apply(document.querySelectorAll("input[type='radio']")).map(function(e){ e.checked = false });
+	/* rechecks screenSize and viewingDistance to default values */
+	$("#viewingDistance").prop('checked', true);
+}
+
+// The main function for initiating everything
+function specInit() {
+    // Get the canvas by ID
+    bar = document.getElementById('rect');
+    // Set a height and width for the canvas item
+    height = bar.height;
+    width = bar.width;
+
+    bar.width = 600;
+     
+    // A variable we'll use to draw the actual item
+    draw = bar.getContext('2d');
+ 
+    // We want to redraw every 30ms
+    setInterval(redraw, 30);
+ 
+    // When the user presses a key run a function, when the user stops
+    // run another function. We'll get to these functions later.
+    document.onkeydown = canvasChange;
+    document.onkeyup = canvasStop;
+     
+}
+
+// Wipe the canvas when we want to move the rectangle, then we can redraw it.
+function clearRect(c) {
+    c.clearRect(0, 0, bar.width, height);
+}
+ 
+function redraw() {
+    clearRect(draw);
+    draw.fillStyle = 'rgba(0,0,0,0.75)';
+    draw.fillRect( 0, 25, barLen, 50);   
+}
+
+function canvasChange(e) {
+    if(e.keyCode == '37') leftcheck = true;
+    else leftcheck = false;
+     
+     
+    if(e.keyCode == '39') rightcheck = true; 
+    else rightcheck = false;
+     
+    // If the variables are true, increase the left and right movement accordingly. 
+    // We also run the counting function, to keep track of total movement. 
+    if(rightcheck == true) { barLen += 2;};
+    if(leftcheck == true) { if(barLen > 0) {barLen -= 2;}};
+ 
+}
+
+// When the user stops pressing a key, check which key it is and set it to false
+function canvasStop(e) {
+    if(e.keyCode == '37') {
+        leftcheck = false;
+    }
+    if(e.keyCode == '39') {
+        rightcheck = false;
+    }
+ 
+}
+
+function visAngleCalc() {
+    barRes = barLen;
+    
+    var vdValue = $('input[name=VD]:checked').val();
+    if (vdValue != "0") {
+        /* calculate mm value from vdValue */
+        distFromScreen = 10 * (36 + (10 * (vdValue)));
+    }
+    var horzRes = screen.width;
+    var horzLength = (horzRes/barRes) * cardLen;
+    var oppLength = horzLength/2;
+    var totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
+    var pixelsPerDegree = horzRes/totalVisAngle;
+    return pixelsPerDegree;
+}
+
+/* Apply new environment conditions to item dimensions and fixation */
+function UpdateElements() {
+	pixelsPerDegree = visAngleCalc();
+	itemRadius = Math.floor(pixelsPerDegree);
+	itemDim = 2 * itemRadius;
+	eccenDist = eccenAngle * pixelsPerDegree;
+	$(".gabor").css("width", itemDim);
+
+	var c = document.getElementById("fixationShow");
+	var d = document.getElementById("fixationCont");
+	DrawFixation(c);
+	DrawFixation(d);
+
+	console.log(centerY);
+	console.log((pixelsPerDegree * textAngle));
+	console.log(centerY + (pixelsPerDegree * textAngle));
+	$("#feedback").css("top", centerY + (pixelsPerDegree * textAngle));
+	$(".fixation").css("margin-top", -itemRadius);
+	$(".fixation").css("margin-left", -itemRadius);
+	$(".fixation").show();
+}
+
+/* function in order to combat async processing with AJAX read request,
+additional time between pressing 'Apply' and 'Start Experiment' will
+hopefully allow the trial sequence file to load and process fully */
+function ApplySpecs() {
+	/* tags used to keep out external interference of logging files */
+	UpdateElements();
+	memPracticeGen();
+	//OpenParticipants();
+	//ReadConditions();
+	totalTrials = [memPracticeTrials, practiceTrials, genTrials];
+	$('#specifications').hide();
+	$('#test1').show();
+}
+
+/* --------------------------------------------------------------------------------------- */
+/* ------------------------------------ Motor Practice ----------------------------------- */
+/* --------------------------------------------------------------------------------------- */
+
+var mPracCycles = 0;
+
 function MotorPractice() {
-	$('#instructions').hide();
+	$('#test1').hide();
 	mPracticeTrials = mPracticeGen();
-	mPracSet(mPracticeTrials, currentTrial_mPrac);
+	mPracNext();
 }
 
 function mPracticeGen() {
+
 	var numTargets = 1;
 	var prac = 1;
-	var stimtype = 2;
+	var stimtype = 1;
 
 	var genStruct = [];
 	var itemOrients = [];
@@ -328,46 +491,127 @@ function mPracticeGen() {
 	return genStruct;
 }
 
-function mPracSet(trialStruct, index) {
+function mPracSet(trialStruct) {
 	if (trialStruct.stimtype == 1) {
 		ChangeToBar();
 	}
 	if (trialStruct.stimtype == 2) {
 		ChangeToGabor();
 	}
-	$('#motorPrac').css("top", $("#continuousReport").height()/2 - trialStruct[index].randSpacings[0].y - itemDim);
-	$('#motorPrac').css("left", $(window).width()/2 + trialStruct[index].randSpacings[0].x);
-	ccwRotate(trialStruct[index].items[0], '#motorPrac');
-	$('#motorPrac').show();
-	ShowContinuousReport(trialStruct[index]);
+	$('#motorPrac').css("top", $("#continuousReport").height()/2 - trialStruct.randSpacings[0].y - itemDim);
+	$('#motorPrac').css("left", $(window).width()/2 + trialStruct.randSpacings[0].x);
+	ccwRotate(trialStruct.items[0], '#motorPrac');
 }
 
 function mPracNext() {
 	currentTrial_mPrac++;
+	$("#motorPrac").hide();
+	$("#continuousReport").show();
   	if (currentTrial_mPrac>=numTrials_mPrac) {
     	mPracticeFeedbackReport();
   	} else {
-  		mPracSet(mPracticeTrials, currentTrial_mPrac);
+  		mPracSet(mPracticeTrials[currentTrial_mPrac]);
+  		PracProgress(mPracticeTrials[currentTrial_mPrac]);
+  	}
+}
+
+function PracProgress(trialStruct) {
+
+  	if(currentTrial_mPrac == 0) {
+  		$(document).bind('keyup.startTrial', 'space', function(e) { 
+	    	$(document).unbind('keyup.startTrial');
+	    	$('#motorPrac').show();
+	    	ShowContinuousReport(trialStruct);
+    	});
+  	} else {
+  		$('#motorPrac').show();
+  		ShowContinuousReport(trialStruct);
   	}
 }
 
 function mPracticeFeedbackReport() {
 	var perfSum = 0;
+	var performanceMin = 90;
 	var performance;
+	mPracCycles++;
 	for (var i = 0; i<mPracPerf.length; i++) {
 		perfSum += mPracPerf[i];
 	}
 	performance = perfSum/mPracPerf.length;
 	console.log(performance);
 	if (performance > performanceMin) {
-		console.log("Congratulations!");
-		motorPrac = false;
-		NextTrial();
+		$('#average').html("Average Accuracy: " + Math.round(performance) + " percent<br>You may now move on to the next test.<br><br>Press space to continue.");
+		$('#average').show();
+		$(document).bind('keyup.startTrial', 'space', function(e) { 
+	    	$(document).unbind('keyup.startTrial');
+	    	motorPrac = false;
+	    	$("#average").hide();
+			$("#continuousReport").hide();
+	    	$("#test2").show();
+    	});
 	} else {
-		currentTrial_mPrac = 0;
-		mPracticeTrials = [];
-		MotorPractice();
+		$('#average').html("Average Accuracy: " + Math.round(performance) + " percent (average must be at least 90%)<br>If you find that the task is too difficult, please press the <b>Return HIT</b> button.<br><br>Press space to try again.");
+		$('#average').show();
+		$(document).bind('keyup.repTrial', 'space', function(e) { 
+	    	$(document).unbind('keyup.repTrial');
+	    	$("#average").hide();
+			currentTrial_mPrac = -1;
+			mPracPerf = [];
+			mPracticeTrials = [];
+			MotorPractice();
+		});
 	}
+}
+
+/* --------------------------------------------------------------------------------------- */
+/* --------------------------------- Memory Practice 2 ----------------------------------- */
+/* --------------------------------------------------------------------------------------- */
+
+function memPracticeGen() {
+
+	var memPracNumTrials = 5;
+	var test2SS = 2;
+	var stimtype = 1;
+	var startAngle;
+	var itemOrients = [];
+	var curAngles = [];
+	var curCoordinates = [];
+	var targetIndex;
+
+	for (var j = 0; j<memPracNumTrials; j++) {
+		startAngle = Math.floor(Math.random()*360);
+	    for (var k=0; k<test2SS; k++) {
+	        itemOrients.push(Math.floor(Math.random()*360));
+	    }
+	    curAngles = randSpacings(test2SS, startAngle);
+	    curCoordinates = toCoordinates(curAngles);
+	    targetIndex = Math.floor(Math.random() * test2SS);
+	    memPracticeTrials.push({'prac': 1,
+					'trial': j+1, 
+	                'stimtype': 1, 
+	                'setSize': test2SS,
+					'targetIndex': targetIndex,
+					'items': itemOrients,
+					'randAngles': curAngles,
+					'randSpacings': curCoordinates});
+	    itemOrients = [];
+	    curCoordinates = [];
+	}
+	memPracticeTrials = Shuffle(memPracticeTrials);
+}
+
+/* --------------------------------------------------------------------------------------- */
+/* ------------------------------------ Main Exp Setup ----------------------------------- */
+/* --------------------------------------------------------------------------------------- */
+
+function hideInstruct() {
+	$(testSeq[currentBlock]).hide();
+	NextTrial();
+}
+
+function showInstruct() {
+	blockPerf = [];
+	$(testSeq[currentBlock + 1]).show();
 }
 
 function OpenStatus() {
@@ -416,90 +660,6 @@ function OpenParticipants() {
 	}
 	partRequest.open('GET', 'conditions/participants.txt', false);
 	partRequest.send();
-}
-
-
-/* Clears all radio buttons in the instructions */
-function ClearAll() { 
-	/* clears all 'radio' type buttons to unchecked */
-	Array.prototype.slice.apply(document.querySelectorAll("input[type='radio']")).map(function(e){ e.checked = false });
-	/* rechecks screenSize and viewingDistance to default values */
-	$("#screenSize").prop('checked', true);
-	$("#viewingDistance").prop('checked', true);
-}
-
-/* retrieves other value inputted in text box and 
-sets the value to SSother */
-function ChangeRadioOther() {
-	var other= document.getElementById("SSother");
-	other.value=document.getElementById("inputother").value;
-}
-
-function ChangeAgeInput() {
-	var other= document.getElementById("age");
-	other.value=document.getElementById("ageInput").value;
-}
-
-/* Gets screen size, viewing distance choice from instructions, sets
-screen size and viewing distance */
-function GetSpec() {
-	/* get viewing distance (vd) value */
-	var vdValue = $('input[name=VD]:checked').val();
- 	if (vdValue != "0") {
- 		/* calculate mm value from vdValue */
-		distFromScreen = 10 * (36 + (10 * (vdValue)));
-  	}
-  	/* call for other category */
-  	ChangeRadioOther();
-  	/* get screen size (ss) value */
-  	var ssValue = $('input[name=SS]:checked').val();
-  	/* check if other was selected */
-  	if (isNumber(ssValue)) {
-  		horzLength = Math.floor(GetHorzLength(ssValue));
-  	}
-  	/* apply new conditions */
-  	UpdateElements();
-}
-
-/* function in order to combat async processing with AJAX read request,
-additional time between pressing 'Apply' and 'Start Experiment' will
-hopefully allow the trial sequence file to load and process fully */
-function ApplySpecs() {
-	/* tags used to keep out external interference of logging files */
-	GetSpec();
-	//OpenParticipants();
-	//ReadConditions();
-	totalTrials = [practiceTrials, genTrials];
-	$('#specifications').hide();
-	$('#instructions').show();
-
-}
-
-/* calculates horizontal length of participant based on 
-provided diagonal length and aspect ratio from resolution */
-function GetHorzLength(screenSize) {
-	var horizontal = screenSize * inchTomm * Math.cos(Math.atan(screen.height/screen.width));
-	return horizontal;
-}
-
-/* Apply new environment conditions to item dimensions and fixation */
-function UpdateElements() {
-	oppLength = horzLength/2;
-	totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
-	pixelsPerDegree = horzRes/totalVisAngle;
-	itemRadius = Math.floor(pixelsPerDegree);
-	itemDim = 2 * itemRadius;
-	eccenDist = eccenAngle * pixelsPerDegree;
-	$(".gabor").css("width", itemDim);
-
-	var c = document.getElementById("fixationShow");
-	var d = document.getElementById("fixationCont");
-	DrawFixation(c);
-	DrawFixation(d);
-
-	$(".fixation").css("margin-top", -itemRadius);
-	$(".fixation").css("margin-left", -itemRadius);
-	$(".fixation").show();
 }
 
 function AdjustElements(trialStruct) {
@@ -648,7 +808,7 @@ function StartExperiment() {
 	  	return false;
 	}
 	startExpTime = new Date();
-	$('#instructions').hide();
+	$('.test').hide();
   	$("#showTrial").height($(window).height());
   	$("#continuousReport").height($(window).height());
   	$("#showTrial").css("margin-top", (($(window).height())/2) - ($("#showTrial").height())/2);
@@ -659,6 +819,8 @@ function StartExperiment() {
 /* Show the next trial or show the done screen if they are finished: */
 function NextTrial() {
 	currentTrial++;
+	$('#targetSelect').show();
+	$('#elements').hide();
 	$('#showTrial').show();
 	console.log(totalTrials);
 	console.log(totalTrials[currentBlock].length);
@@ -670,13 +832,9 @@ function NextTrial() {
     	} else {
       		currentTrial = 0;
       		currentBlock++;
-      		if (currentBlock == 1) {
-        		alert("Okay, time for the real experiment. You won't get feedback about how you are doing anymore. Please do your best!");
-      		}
     	}
   	}
   	SetItems(totalTrials[currentBlock][currentTrial]);
-  	$('#elements').hide();
   	TrialProgress(totalTrials[currentBlock][currentTrial]);
 }
 
@@ -706,14 +864,6 @@ function placeGabor(item, curTarget, trialStruct) {
 }
 
 function TrialProgress(trialStruct) {
-  	/*
-  	if (currentBlock == 1) {
-   		$('#pressKey').html('<u><font color=navy>Practice for Part ' + (currentBlock+1) + ' of 2</font></u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');
-  	}  else {
-    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Press space to start this trial.');  
-  	}
-  	$('#pressKey').show();
-  	*/
 
   	if(currentTrial == 0) {
   		$(document).bind('keyup.startTrial', 'space', function(e) { 
@@ -800,13 +950,20 @@ function ShowContinuousReport(trialStruct) {
 		    console.log(percentCorrect);
 
 		    $("#continuousStimulus").hide();
-		    $("#continuousReport").hide();
 		    if (motorPrac) {
 		    	$("#motorPrac").hide();
 		    	mPracPerf.push(percentCorrect);
-		    	mPracNext();
+		    	$('#feedback').html("Accuracy: " + Math.round(percentCorrect) + " percent (average must be at least 90%)<br><br>Press space to continue.");
+		    	$('#feedback').show();
+		    	$(document).bind('keyup.feedback', 'space', function(e) {
+		    		$("#continuousReport").hide();
+		    		$('#feedback').hide();
+		    		$(document).unbind('keyup.feedback');
+		    		mPracNext();
+		    	});
 		    } else {
-		    	Perf.push(percentCorrect);
+		    	$("#continuousReport").hide();
+		    	blockPerf.push(percentCorrect);
 		    	FeedbackReport(trialStruct);
 		    }
 	     	
@@ -835,21 +992,56 @@ function ShowContinuousReport(trialStruct) {
 }
 
 function FeedbackReport(trialStruct) {
-  	/*
-  	if (currentBlock == 1) {
-   		$('#pressKey').html('<u><font color=navy>Practice for Part ' + (currentBlock+1) + ' of 2</font></u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Click anywhere to start this trial.');
-  	}  else {
-    	$('#pressKey').html('<u>Part ' + (currentBlock-1) + ' of 2</u><br><br>Trial ' + (currentTrial+1) + ' of ' + numTrialsPerPart[currentBlock] + ' (in this part)<br><br>Press space to start this trial.');  
-  	}
-  	$('#pressKey').show();
-  	*/
 
+	$("#targetSelect").hide();
+	$("#continuousReport").show();
   	if(currentTrial == totalTrials[currentBlock].length - 1) {
-  		$(document).bind('keyup.startTrial', 'space', function(e) { 
-	    	$(document).unbind('keyup.startTrial');
-	    	NextTrial();
-    	});
+  		var perfSum = 0;
+  		var performanceMin = 80;
+		var performance;
+		for (var i = 0; i<totalTrials[currentBlock].length; i++) {
+			perfSum += blockPerf[i];
+		}
+		performance = perfSum/totalTrials[currentBlock].length;
+		console.log(performance);
+  		if (memPrac) {
+  			if (performance > performanceMin) {
+				$('#average').html("Average Accuracy: " + Math.round(performance) + " percent<br>You may now move on to the next test.<br><br>Press space to continue.");
+				$('#average').show();
+				$(document).bind('keyup.startTrial', 'space', function(e) { 
+			    	$(document).unbind('keyup.startTrial');
+			    	memPrac = false;
+			    	$("#average").hide();
+					$("#continuousReport").hide();
+			    	showInstruct();
+		    	});
+			} else {
+				$('#average').html("Average Accuracy: " + Math.round(performance) + " percent (average must be at least 80%)<br>If you find that the task is too difficult, please press the <b>Return HIT</b> button.<br><br>Press space to try again.");
+				$('#average').show();
+				$(document).bind('keyup.repTrial', 'space', function(e) { 
+			    	$(document).unbind('keyup.repTrial');
+			    	$("#average").hide();
+			    	$("#continuousReport").hide();
+					currentTrial = -1;
+					currentBlock = 0;
+					memPracticeTrials = [];
+					memPracticeGen();
+					totalTrials = [memPracticeTrials, practiceTrials, genTrials];
+					blockPerf = [];
+					NextTrial();
+				});
+			}
+  		} else {
+  			$('#average').html("Average Accuracy: " + Math.round(performance) + " percent<br><br>Press space to continue.");
+			$('#average').show();
+	  		$(document).bind('keyup.startTrial', 'space', function(e) { 
+		    	$(document).unbind('keyup.startTrial');
+		    	$("#continuousReport").hide();
+		    	showInstruct();
+	    	});
+  		}
   	} else {
+  		$("#continuousReport").hide();
   		NextTrial();
   	}
 }
@@ -944,7 +1136,6 @@ $(function() {
   	}
 });
 
-console.log("Hello World!");
 console.log($(window).width());
 console.log($(window).height());
 console.log(screen.width);
@@ -958,12 +1149,19 @@ console.log(screen.height);
 	<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
 </noscript>
 
-<div id="instructions"><h2>Instructions</h2>
+<div id="test1" class="test"><h2>Practice Test 1 (of 3): Perception for 1 item</h2>
 
-<!--
-	<p style='text-align: center'><a href='javascript:ApplySpecs()' id='applySpecsButton'>Apply</a>
--->
-	<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton' class="nav">Start Experiment</a>
+	<h1>Thank you! </h1>
+	<p>We will first test your basic visual/motor skills, as a preliminary step before starting the visual memory task.</p>
+
+	<!-- *Show an example display, containing a sample line item at 4˚ eccentricity and a test item at fixation. Two lines are randomly oriented. Add an arrow to the test item to indicate that this is the one that needs to be rotated. -->
+
+	<p>Use the mouse to adjust the angle of the line at the center.
+	Get it to match the angle of the other line, so they are parallel.
+	Be as accurate as you can. You will see your accuracy score (0-100).
+	To pass this test, <b>your average accuracy across 5 trials should be above 90!</b></p>
+
+	<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton' class="nav">Start Practice Test 1 (of 3): Perception for 1 item</a>
 		<div id="loading" style='text-align: center'>
 			<p>
 				<img src="static/images/spinner.svg" style="width: 30px; height: 30px">
@@ -972,7 +1170,40 @@ console.log(screen.height);
 	</p>
 </div>
 
-<div id="subject">
+<div id="test2" class="test"><h2>Practice Test 2 (of 3): Memory for 2 items</h2>
+
+	<p align="center"><img src="static/images/test2.png" style="max-width: 100%;"></p>
+
+	<p>Before you start each trial, please look at the dot at the center of the screen. </p>
+	<p>2 lines will be briefly presented at various locations in the periphery, too briefly to look at directly, so you will do best if you keep your eyes on the fixation dot.</p>
+	<p>After a 1-sec blank period, one of the items will be cued by a circle.
+	Report the angle of the cued item from memory by adjusting the angle of the line at the center.</p>
+	<p><b>Be as accurate as you can.</b> Do not rush to respond. </p>
+	<p>To pass this test, your average accuracy across 5 trials should be above <mark>80</mark>!</p>
+
+
+	<p style='text-align: center'><a href='javascript:hideInstruct()' id='startTest2' class="nav">Start Practice Test 2 (of 3): Memory for 2 items</a>
+	</p>
+</div>
+
+<div id="test3" class="test"><h2>Practice Test 3 (of 3): Memory for 6 items</h2>
+
+	<p>This is the last practice test you will need to pass before the actual visual memory test. </p>
+
+	<p align="center"><img src="static/images/test3.png" style="max-width: 100%;"></p>
+
+	<p>This time, you will be briefly presented with 6 lines. </p>
+	<p>As before, you will be cued to report the angle of one of the items.</p>
+	<p>Try to remember as many items as possible, and respond as accurately as possible. </p>
+	<p>Keep your eyes on the central fixation dot while doing this task.</p>
+	<p>You will receive 10 practice trials. </p>
+
+
+	<p style='text-align: center'><a href='javascript:hideInstruct()' id='startTest3' class="nav">Start Practice Test 3 (of 3): Memory for 6 items</a>
+	</p>
+</div>
+
+<div id="subject" class="page">
 	<h2>Subject Information</h2>
     <hr>
 
@@ -1064,12 +1295,23 @@ console.log(screen.height);
     </div>
 </div>
 
-<div id="specifications">
+<div id="specifications" class="page">
 	<h2>Viewing Condition Information</h2>
     <hr>
 
     <p style='text-align: center'><a href='javascript:ClearAll()' id='clearAllButton' class="nav">Clear All</a>
 
+    <div>
+    Please adjust the bar on the screen using the arrow keys to match the length of a gift card or credit/debit card.
+    </div>
+ 
+ 	<div style='text-align: center'>
+    <canvas id="rect" height="100" style="min-width:100%">
+    Your browser does not support the HTML5 canvas tag.
+    </canvas>
+    </div>
+
+    <!--
 	<p>Please choose your screen size <b>(in inches)</b> from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers.</p>
 
 	<input id="screenSize" type="radio" name="SS" value="15.6" checked="checked" style="display:none">
@@ -1082,12 +1324,13 @@ console.log(screen.height);
 			<input type="radio" id="SSother" name="SS" value="other"><label for="SSother"> Other</label>
 				<input id="inputother" type="text" onchange="ChangeRadioOther()"/>
 		</p>
+	-->
 
 	<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
 
 	<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
 
-	<table align="center">
+	<table align="center" style="max-width:100%">
 	    <tr>
 	        <td>
 	        	<label for="VD18">
@@ -1175,9 +1418,12 @@ console.log(screen.height);
 	<div id="motorPrac" class="array">
 		<img src="static/images/gaborCont.png" class="gabor" width="100">
 	</div>
+	<!-- feedback -->
+	<div id="feedback" class="botText">Accuracy: 10 percent (average must be at least 90%)<br><br>Press space to continue.</div>
+	<div id="average" class="botText">Average Accuracy: 10 percent<br><br>Press space to continue.</div>
 </div>
 
-<div id="questionnaire">
+<div id="questionnaire" class="page">
 	<h2>Post-experiment questionnaire</h2>
     <hr>
 
