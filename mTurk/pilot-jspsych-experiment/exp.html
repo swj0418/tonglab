@@ -115,6 +115,21 @@
   	display: none;
 }
 
+#pressKeyShow {
+	position: absolute;
+  	display: none;
+}
+
+#pressKeyCont {
+	position: absolute;
+  	display: none;
+}
+
+.viewD {
+	display: none;
+}
+
+
 </style>
 
 <script>
@@ -231,10 +246,6 @@ var inCircle = 0.0541;
 /* Unit conversions */
 var inchTomm = 25.4;
 
-/* Turk assignment id written within URL used 
-for external Turk submission */
-$('#assignmentId').val(GetAssignmentId());
-
 /* --------------------------------------------------------------------------------------- */
 /* ------------------------------------ Window Change ------------------------------------ */
 /* --------------------------------------------------------------------------------------- */
@@ -317,6 +328,16 @@ function SpecsScreen() {
 function SpecsBack() {
 	$('#specifications').hide();
 	$('#subject').show();
+}
+
+function CardNext() {
+	$('.card').hide();
+	$('.viewD').show();
+}
+
+function CardBack() {
+	$('.viewD').hide();
+	$('.card').show();
 }
 
 function DebriefScreen() {
@@ -424,7 +445,7 @@ function UpdateElements() {
 	console.log(centerY);
 	console.log((pixelsPerDegree * textAngle));
 	console.log(centerY + (pixelsPerDegree * textAngle));
-	$("#feedback").css("top", centerY + (pixelsPerDegree * textAngle));
+	$(".botText").css("top", centerY + (pixelsPerDegree * textAngle));
 	$(".fixation").css("margin-top", -itemRadius);
 	$(".fixation").css("margin-left", -itemRadius);
 	$(".fixation").show();
@@ -437,8 +458,8 @@ function ApplySpecs() {
 	/* tags used to keep out external interference of logging files */
 	UpdateElements();
 	memPracticeGen();
-	//OpenParticipants();
-	//ReadConditions();
+	OpenParticipants();
+	ReadConditions();
 	totalTrials = [memPracticeTrials, practiceTrials, genTrials];
 	$('#specifications').hide();
 	$('#test1').show();
@@ -518,7 +539,9 @@ function mPracNext() {
 function PracProgress(trialStruct) {
 
   	if(currentTrial_mPrac == 0) {
+  		$("#pressKeyCont").show();
   		$(document).bind('keyup.startTrial', 'space', function(e) { 
+  			$("#pressKeyCont").hide();
 	    	$(document).unbind('keyup.startTrial');
 	    	$('#motorPrac').show();
 	    	ShowContinuousReport(trialStruct);
@@ -605,12 +628,13 @@ function memPracticeGen() {
 /* --------------------------------------------------------------------------------------- */
 
 function hideInstruct() {
-	$(testSeq[currentBlock]).hide();
+	$("#test2").hide();
 	NextTrial();
 }
 
 function showInstruct() {
 	blockPerf = [];
+	$("#average").hide ();
 	$(testSeq[currentBlock + 1]).show();
 }
 
@@ -702,6 +726,7 @@ function ReadConditions() {
 	console.log(statusIndexStr);
 
 	var pracfileLoc = 'conditions/CounterBalance_prac/bar_SS6_10display_subj' + statusIndexStr + '.txt';
+	console.log(pracfileLoc);
 	var pracDataRequest = new XMLHttpRequest();
 	pracDataRequest.onreadystatechange = function() {
 		if((pracDataRequest.readyState === 4) && (pracDataRequest.status === 200)) {
@@ -737,6 +762,7 @@ function ProcessConditions(trialStruct, structNum) {
 	var curCoordinates = [];
 
 	conditionStream = conditions.split(/\s+/);
+	console.log(conditionStream);
 	numValuesPerTrial = (conditionStream.length - 1)/structNum
 	for (var i = 0; i < structNum; i++) {
 		subjID = parseFloat(conditionStream[i * numValuesPerTrial]);
@@ -819,9 +845,6 @@ function StartExperiment() {
 /* Show the next trial or show the done screen if they are finished: */
 function NextTrial() {
 	currentTrial++;
-	$('#targetSelect').show();
-	$('#elements').hide();
-	$('#showTrial').show();
 	console.log(totalTrials);
 	console.log(totalTrials[currentBlock].length);
   	if (currentTrial>=totalTrials[currentBlock].length) {
@@ -832,8 +855,13 @@ function NextTrial() {
     	} else {
       		currentTrial = 0;
       		currentBlock++;
+      		$(testSeq[currentBlock]).hide();
+			console.log(testSeq[currentBlock]);
     	}
   	}
+  	$('#targetSelect').show();
+	$('#elements').hide();
+	$('#showTrial').show();
   	SetItems(totalTrials[currentBlock][currentTrial]);
   	TrialProgress(totalTrials[currentBlock][currentTrial]);
 }
@@ -866,7 +894,9 @@ function placeGabor(item, curTarget, trialStruct) {
 function TrialProgress(trialStruct) {
 
   	if(currentTrial == 0) {
+  		$('#pressKeyShow').show();
   		$(document).bind('keyup.startTrial', 'space', function(e) { 
+  			$('#pressKeyShow').hide();
 	    	$(document).unbind('keyup.startTrial');
 	    	ShowTrial(trialStruct);
     	});
@@ -1037,7 +1067,12 @@ function FeedbackReport(trialStruct) {
 	  		$(document).bind('keyup.startTrial', 'space', function(e) { 
 		    	$(document).unbind('keyup.startTrial');
 		    	$("#continuousReport").hide();
-		    	showInstruct();
+		    	if(currentBlock<totalTrials.length-1) {
+		    		showInstruct();
+		    	} else {
+		    		NextTrial();
+		    	}
+		    	
 	    	});
   		}
   	} else {
@@ -1053,9 +1088,13 @@ function Done() {
 
 /* Save the data to the server (choose what to save) */
 function SaveData() {
+	/* Turk assignment id written within URL used 
+	for external Turk submission */
+	$('#assignmentId').val(assignmentId);
+	$("#turkSubmit").attr("action", "https://workersandbox.mturk.com/mturk/externalSubmit?assignmentId="+assignmentId);
+
   	var totalTime = new Date() - startExpTime;
   	var newDate = new Date();
-  	$('#assignmentId').val(GetAssignmentId());
   	var curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " + 
   	"are on Turk, so you're probably testing. Enter an ID to save your data with:", "id");
   	d = { 
@@ -1098,7 +1137,8 @@ function SendToServer(id, curData) {
     	'id': id,
     	'experimentName': experimentName,
     	'curData': JSON.stringify(curData)
-  	}; 
+  	};
+  	console.log(assignmentId);
   	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/save.pl",
     	dataToServer,
 	    function(data) { 
@@ -1150,11 +1190,12 @@ console.log(screen.height);
 </noscript>
 
 <div id="test1" class="test"><h2>Practice Test 1 (of 3): Perception for 1 item</h2>
+	<hr>
 
 	<h1>Thank you! </h1>
 	<p>We will first test your basic visual/motor skills, as a preliminary step before starting the visual memory task.</p>
 
-	<!-- *Show an example display, containing a sample line item at 4˚ eccentricity and a test item at fixation. Two lines are randomly oriented. Add an arrow to the test item to indicate that this is the one that needs to be rotated. -->
+	<p align="center"><img src="static/images/test1.png" style="max-width: 100%;"></p>
 
 	<p>Use the mouse to adjust the angle of the line at the center.
 	Get it to match the angle of the other line, so they are parallel.
@@ -1171,6 +1212,7 @@ console.log(screen.height);
 </div>
 
 <div id="test2" class="test"><h2>Practice Test 2 (of 3): Memory for 2 items</h2>
+	<hr>
 
 	<p align="center"><img src="static/images/test2.png" style="max-width: 100%;"></p>
 
@@ -1187,6 +1229,7 @@ console.log(screen.height);
 </div>
 
 <div id="test3" class="test"><h2>Practice Test 3 (of 3): Memory for 6 items</h2>
+	<hr>
 
 	<p>This is the last practice test you will need to pass before the actual visual memory test. </p>
 
@@ -1199,9 +1242,32 @@ console.log(screen.height);
 	<p>You will receive 10 practice trials. </p>
 
 
-	<p style='text-align: center'><a href='javascript:hideInstruct()' id='startTest3' class="nav">Start Practice Test 3 (of 3): Memory for 6 items</a>
+	<p style='text-align: center'><a href='javascript:NextTrial()' id='startTest3' class="nav">Start Practice Test 3 (of 3): Memory for 6 items</a>
 	</p>
 </div>
+
+<div id="actual" class="test"><h2>Actual Test: Memory for 6 items</h2>
+	<hr>
+
+	<p>This is the actual visual memory experiment.</p>
+	<p>The trial sequence will be identical to the previous practice test.</p>
+
+	<p align="center"><img src="static/images/test3.png" style="max-width: 100%;"></p>
+
+	<p>You will receive a total of 106 trials, which should take about 12 minutes.</p>
+	<p>These trials are divided into 4 blocks. After each block, you will receive feedback on your average accuracy.</p>
+
+	<h1>Reminder:</h1>
+	<p>Try to remember as many items as possible, and respond as accurately as possible. </p>
+	<p>Keep your eyes on the central fixation dot while doing this task.</p>
+
+
+	<p style='text-align: center'><a href='javascript:NextTrial()' id='startActual' class="nav">Start Actual Test: Memory for 6 items</a>
+	</p>
+</div>
+
+<!-- Start form here to capture comments -->
+<form id="turkSubmit" action="https://workersandbox.mturk.com/mturk/externalSubmit" method="post">
 
 <div id="subject" class="page">
 	<h2>Subject Information</h2>
@@ -1300,15 +1366,16 @@ console.log(screen.height);
     <hr>
 
     <p style='text-align: center'><a href='javascript:ClearAll()' id='clearAllButton' class="nav">Clear All</a>
-
-    <div>
-    Please adjust the bar on the screen using the arrow keys to match the length of a gift card or credit/debit card.
-    </div>
- 
- 	<div style='text-align: center'>
-    <canvas id="rect" height="100" style="min-width:100%">
-    Your browser does not support the HTML5 canvas tag.
-    </canvas>
+    <div id="card" class="card">
+	    <div>
+	    Please adjust the bar on the screen using the arrow keys to match the length of a gift card or credit/debit card.
+	    </div>
+	 
+	 	<div style='text-align: center'>
+	    <canvas id="rect" height="100" style="min-width:100%">
+	    Your browser does not support the HTML5 canvas tag.
+	    </canvas>
+	    </div>
     </div>
 
     <!--
@@ -1326,6 +1393,7 @@ console.log(screen.height);
 		</p>
 	-->
 
+	<div id="viewD" class="viewD">
 	<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
 
 	<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
@@ -1360,10 +1428,21 @@ console.log(screen.height);
 	        </td>
 	    </tr>
 	</table>
+	</div>
 
     <hr>
 
-	<div class="instructionsnav">
+    <div id="cardNext" class="card">
+        <div class="row">
+            <div>
+                <button type="button" id="cardNext" value="cardNext" class="nav" onClick="CardNext();">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+	<div id="SpecsBack" class="card">
         <div class="row">
             <div>
                 <button type="button" id="specsBack" value="specsBack" class="nav" onClick="SpecsBack();">
@@ -1373,7 +1452,7 @@ console.log(screen.height);
         </div>
     </div>
 
-    <div class="instructionsnav">
+    <div id="applySpec" class="viewD">
         <div class="row">
             <div>
                 <button type="button" id="specsNext" value="specsNext" class="nav" onClick="ApplySpecs();">
@@ -1382,6 +1461,17 @@ console.log(screen.height);
             </div>
         </div>
     </div>
+
+    <div id="cardBack" class="viewD">
+        <div class="row">
+            <div>
+                <button type="button" id="cardBack" value="cardBack" class="nav" onClick="CardBack();">
+                    Back
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- Basic structure for a trial: -->
@@ -1397,8 +1487,7 @@ console.log(screen.height);
 		<div id="item7" class="array"><img id="gaborShow7" src="static/images/gaborCont.png" class="gabor" width="100"></div>
 		<div id="item8" class="array"><img id="gaborShow8" src="static/images/gaborCont.png" class="gabor" width="100"></div>
 	</div>
-	<!--<div id="pressKey">Click anywhere to start this trial.</div>
-		-->
+	<div id="pressKeyShow" class="botText"><br><br>Press space to begin.</div>
 </div>
 
 <!-- Structure for continuous report after the trial: -->
@@ -1421,6 +1510,7 @@ console.log(screen.height);
 	<!-- feedback -->
 	<div id="feedback" class="botText">Accuracy: 10 percent (average must be at least 90%)<br><br>Press space to continue.</div>
 	<div id="average" class="botText">Average Accuracy: 10 percent<br><br>Press space to continue.</div>
+	<div id="pressKeyCont" class="botText"><br><br>Press space to begin.</div>
 </div>
 
 <div id="questionnaire" class="page">
@@ -1482,7 +1572,7 @@ console.log(screen.height);
     <br>
 
     <div id="doneText"><br><b>Any comments for us?</b><br><br>
-			<textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
+		<textarea name="comments" id="comments" style="width: 300px; height: 200px"></textarea><br><br>
 	</div>
 
 	<hr>
@@ -1497,6 +1587,15 @@ console.log(screen.height);
         </div>
     </div>
 </div>
+
+<input type="hidden" name="assignmentId" id="assignmentId" value="">
+<input type="submit" value="Submit" name="submitButton" id="submitButton" style="display:none">
+<!--
+ submit to turk
+ https://workersandbox.mturk.com/mturk/externalSubmit
+ https://www.mturk.com/mturk/externalSubmit
+-->
+</form>
 
 <div id="debrief">
 	<h2>Debriefing</h2>
@@ -1513,26 +1612,14 @@ console.log(screen.height);
 	<b>tonglab@vanderbilt.edu</b>
 
 	<p>
-	To complete the HIT, simply press the button below.
+	To complete the HIT, simply press the button below. Upon pressing the button, the page should refresh to load the next HIT. Even if the next HIT remains loading, it should be noted that this HIT has been submitted.
     </p>
 
     <hr>
     <br>
 
-    <!-- Start form here to capture comments -->
-	<form id="turkSubmit" action="https://workersandbox.mturk.com/mturk/externalSubmit" method="post">
-	<input type="hidden" name="assignmentId" id="assignmentId" value="">
-	<input type="submit" value="Submit" name="submitButton" id="submitButton" style="display: none">
-	<!--
-	 submit to turk
-	 https://workersandbox.mturk.com/mturk/externalSubmit
-	https://www.mturk.com/mturk/externalSubmit
-	-->
-
 	<!-- Screen for collecting comments when they are done: -->
 	<a href="javascript:SaveData()" id="timSubmit" class="nav">Submit</a>
-
-	</form>
 </div>
 
 </body>

@@ -66,7 +66,7 @@
 			}
 
 			#button {
-				display: none;
+				/* display: none; */
 			}
 
 		</style>
@@ -88,7 +88,7 @@
 
 					    <h1>Participate in a study on human visual working memory!</h1>
 					    <p>
-							You are invited to participate in a research project conducted by Dr. Frank Tong from the Department of Psychology at Vanderbilt University. We are interested in learning about people’s ability to hold visual information actively in mind for a brief period of time, an ability called <i>visual working memory</i>.
+							You are invited to participate in a research project conducted by Dr. Frank Tong from the Department of Psychology at Vanderbilt University. We are interested in learning about people's ability to hold visual information actively in mind for a brief period of time, an ability called <i>visual working memory</i>.
 						</p>
 						<p>
 							In this study, you will be briefly shown arrays of randomly tilted lines, and after a short delay, you will be asked to report the angle of a particular line from memory. <b>Respond as accurately as you can.</b>
@@ -135,7 +135,7 @@
 							    
 			    	<button id="button" type="button" onClick="openwindow();">
 					  	Open Experiment
-					</button>	
+					</button>
 			</div>		
 			<div id="error">
 				<img id="adlogo" src="static/images/university.png" alt="Lab Logo" />
@@ -165,9 +165,13 @@
 </html>
 
 <script>
+	$('#assignmentId').val(GetAssignmentId());
+	console.log($('#assignmentId').val());
 	var hitId = GetHitId();
 	var workerId = GetWorkerId();
 	var assignmentId = GetAssignmentId();
+
+	console.log(assignmentId);
 
 	function openwindow() {
 		popup = window.open('exp.html?hitId=' + hitId + '&assignmentId=' + assignmentId + '&workerId=' + workerId,'Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes');
