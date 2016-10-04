@@ -1189,19 +1189,20 @@ console.log(screen.height);
 	<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
 </noscript>
 
-<div id="test1" class="test"><h2>How to rotate the central line in the display</h2>
+<div id="test1" class="test"><h2>Practice Test 1 (of 3): Perception for 1 item</h2>
 	<hr>
 
 	<h1>Thank you! </h1>
+	<p>We will first test your basic visual/motor skills, as a preliminary step before starting the visual memory task.</p>
 
 	<p align="center"><img src="static/images/test1.png" style="max-width: 100%;"></p>
 
-	<p> Move the mouse around the fixation point to adjust the angle of the central line, so it matches the angle of the other line. They should be <b>parallel</b>.
+	<p> Rotate the mouse around the fixation point. Use the mouse to adjust the angle of the line at the center.
+	Get it to match the angle of the other line, so they are parallel.
+	Be as accurate as you can. You will see your accuracy score (0-100).
+	To pass this test, <b>your average accuracy should be above 90!</b></p>
 
-	Be as accurate as you can. 
-	To pass this test, <b>your average accuracy must be greater than 90%</b></p>
-
-	<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton' class="nav">Start Practice Trials</a>
+	<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton' class="nav">Start Practice Test 1 (of 3): Perception for 1 item</a>
 		<div id="loading" style='text-align: center'>
 			<p>
 				<img src="static/images/spinner.svg" style="width: 30px; height: 30px">
@@ -1210,52 +1211,55 @@ console.log(screen.height);
 	</p>
 </div>
 
-<div id="test2" class="test"><h2>Practice:  Memory for 2 items</h2>
+<div id="test2" class="test"><h2>Practice Test 2 (of 3): Memory for 2 items</h2>
 	<hr>
 
 	<p align="center"><img src="static/images/test2.png" style="max-width: 100%;"></p>
 
-	<p>Please keep your eyes focused on the central dot throughout each trial, which should take about 4-6 seconds.</p>
-	<p>2 lines will briefly appear in the periphery, too briefly to look at directly, so you will do best if you keep your eyes on the central dot.</p>
-	<p>After a short delay, a circle will appear at one of the line locations.
-	
-	Report the angle of that line from memory by adjusting the angle of the central line.</p>
-	<p><b>Be as accurate as you can, and take your time to respond accurately.</b>  </p>
-	<p>To pass this test, your average accuracy should be above <mark>80%</mark>!</p>
+	<p>Before you start each trial, please look at the dot at the center of the screen. </p>
+	<p>2 lines will be briefly presented at random locations in the periphery, too briefly to look at directly, so you will do best if you keep your eyes on the fixation dot.</p>
+	<p>After a 1-sec blank period, one of the items will be cued by a circle.
+	Report the angle of the cued item from memory by adjusting the angle of the line at the center.</p>
+	<p><b>Be as accurate as you can.</b> Do not rush to respond. </p>
+	<p>To pass this test, your average accuracy across 5 trials should be above <mark>80</mark>!</p>
 
 
-	<p style='text-align: center'><a href='javascript:hideInstruct()' id='startTest2' class="nav">Start Practice: Memory for 2 items</a>
+	<p style='text-align: center'><a href='javascript:hideInstruct()' id='startTest2' class="nav">Start Practice Test 2 (of 3): Memory for 2 items</a>
 	</p>
 </div>
 
-<div id="test3" class="test"><h2>Practice: Memory for 6 items</h2>
+<div id="test3" class="test"><h2>Practice Test 3 (of 3): Memory for 6 items</h2>
 	<hr>
 
-	<p>You will have 10 practice trials that match the real test. 
-	You will be presented with 6 lines to remember. 
-	Don't worry if you find this more challenging, just do the best you can.
+	<p>This is the last practice test you will need to pass before the actual visual memory test. </p>
 
-	Try to remember as many items as you can, as precisely as you can. </p>
+	<p align="center"><img src="static/images/test3.png" style="max-width: 100%;"></p>
+
+	<p>This time, you will be briefly presented with 6 lines. </p>
+	<p>As before, you will be cued to report the angle of one of the items.</p>
+	<p>Try to remember as many items as possible, and respond as accurately as possible. </p>
+	<p>Keep your eyes on the central fixation dot while doing this task.</p>
+	<p>You will receive 10 practice trials. </p>
 
 
-
-	<p style='text-align: center'><a href='javascript:NextTrial()' id='startTest3' class="nav">Start Practice: Memory for 6 items</a>
+	<p style='text-align: center'><a href='javascript:NextTrial()' id='startTest3' class="nav">Start Practice Test 3 (of 3): Memory for 6 items</a>
 	</p>
 </div>
 
 <div id="actual" class="test"><h2>Actual Test: Memory for 6 items</h2>
 	<hr>
 
-	<p>This is the actual experiment.
-	Do the best you can!</p>
+	<p>This is the actual visual memory experiment.</p>
+	<p>The trial sequence will be identical to the previous practice test.</p>
 
 	<p align="center"><img src="static/images/test3.png" style="max-width: 100%;"></p>
 
 	<p>You will receive a total of 106 trials, which should take about 12 minutes.</p>
+	<p>These trials are divided into 4 blocks. After each block, you will receive feedback on your average accuracy.</p>
 
 	<h1>Reminder:</h1>
 	<p>Try to remember as many items as possible, and respond as accurately as possible. </p>
-	<p>Keep your eyes on the central dot while doing this task.</p>
+	<p>Keep your eyes on the central fixation dot while doing this task.</p>
 
 
 	<p style='text-align: center'><a href='javascript:NextTrial()' id='startActual' class="nav">Start Actual Test: Memory for 6 items</a>
