@@ -125,6 +125,11 @@
   	display: none;
 }
 
+#pressKeySub {
+	position: absolute;
+  	display: none;
+}
+
 .viewD {
 	display: none;
 }
@@ -163,7 +168,7 @@ var displayTime = 200;
 var isiTime = 1000;
 /* length of time before stimulus 
 display after response */
-var preShowTime = 1000;
+var preShowTime = 1500;
 /* length of time of cue display 
 before response controls */
 var reportShowTime = 500;
@@ -172,6 +177,7 @@ match the number within the trial sequence files */
 var numTrials_mPrac = 5;
 var numTrials_prac = 10;
 var numTrials = 106;
+var blockSize = 30;
 /* set size numbers placed inside */
 var setSize = [1, 2, 3, 6];
 /* set number of set sizes to variable */
@@ -457,6 +463,7 @@ hopefully allow the trial sequence file to load and process fully */
 function ApplySpecs() {
 	/* tags used to keep out external interference of logging files */
 	UpdateElements();
+	StartList();
 	memPracticeGen();
 	OpenParticipants();
 	ReadConditions();
@@ -554,7 +561,7 @@ function PracProgress(trialStruct) {
 
 function mPracticeFeedbackReport() {
 	var perfSum = 0;
-	var performanceMin = 90;
+	var performanceMin = 95;
 	var performance;
 	mPracCycles++;
 	for (var i = 0; i<mPracPerf.length; i++) {
@@ -563,7 +570,7 @@ function mPracticeFeedbackReport() {
 	performance = perfSum/mPracPerf.length;
 	console.log(performance);
 	if (performance > performanceMin) {
-		$('#average').html("Average Accuracy: " + Math.round(performance) + " percent<br>You may now move on to the next test.<br><br>Press space to continue.");
+		$('#average').html("Awesome!<br>Average Accuracy: " + Math.round(performance) + " percent<br>You may now move on to the next test.<br><br>Press space to continue.");
 		$('#average').show();
 		$(document).bind('keyup.startTrial', 'space', function(e) { 
 	    	$(document).unbind('keyup.startTrial');
@@ -573,7 +580,7 @@ function mPracticeFeedbackReport() {
 	    	$("#test2").show();
     	});
 	} else {
-		$('#average').html("Average Accuracy: " + Math.round(performance) + " percent (average must be at least 90%)<br>If you find that the task is too difficult, please press the <b>Return HIT</b> button.<br><br>Press space to try again.");
+		$('#average').html("Average Accuracy: " + Math.round(performance) + " percent (average must be at least 95%)<br>If you find that the task is too difficult, please press the <b>Return HIT</b> button.<br><br>Press space to try again.");
 		$('#average').show();
 		$(document).bind('keyup.repTrial', 'space', function(e) { 
 	    	$(document).unbind('keyup.repTrial');
@@ -649,14 +656,6 @@ function OpenStatus() {
 					break;
 				}
 			}
-			$("#button").show();
-			if (statusIndex == -1) {
-				$("#accepted").hide();
-				$("#preview").hide();
-				$("#error").hide();
-				$("#button").hide();
-				$("#full").show();
-			}
 		}
 	}
 	listRequest.open('GET', 'conditions/status.txt', false);
@@ -664,7 +663,7 @@ function OpenStatus() {
 }
 
 function OpenParticipants() {
-	var repeat;
+	var repeat = false;
 	var partRequest = new XMLHttpRequest();
 	partRequest.onreadystatechange = function() {
 		if((partRequest.readyState === 4) && (partRequest.status === 200)) {
@@ -673,7 +672,6 @@ function OpenParticipants() {
 				if (partStr[i][0] == workerId) {
 					statusIndex = i;
 					repeat = true;
-					$("#button").show();
 					break;
 				}
 			}
@@ -900,8 +898,17 @@ function TrialProgress(trialStruct) {
 	    	$(document).unbind('keyup.startTrial');
 	    	ShowTrial(trialStruct);
     	});
-  	} else {
-  		ShowTrial(trialStruct);
+  	} else { 
+  		if(currentTrial%blockSize == 0) {
+  			$('#pressKeyBreak').show();
+	  		$(document).bind('keyup.compBreak', 'space', function(e) { 
+	  			$('#pressKeyBreak').hide();
+		    	$(document).unbind('keyup.compBreak');
+		    	ShowTrial(trialStruct);
+	    	});
+  		} else {
+  			ShowTrial(trialStruct);
+  		}
   	}
 }
 
@@ -967,6 +974,9 @@ function ShowContinuousReport(trialStruct) {
   	setTimeout(function() {
   		document.body.style.cursor = 'auto';
   		$("#continuousStimulus").show();
+  		if (motorPrac) {
+	  		$("#pressKeySub").show();
+	  	}
   		$(document).bind('keyup.curTrial', 'space', function(e) {
 			var answer = wrap(360 - (angleDeg + randAdj));
 			trialStruct.reportedAngle = Math.round(answer);
@@ -981,9 +991,12 @@ function ShowContinuousReport(trialStruct) {
 
 		    $("#continuousStimulus").hide();
 		    if (motorPrac) {
+		  		$("#pressKeySub").hide();
+		  	}
+		    if (motorPrac) {
 		    	$("#motorPrac").hide();
 		    	mPracPerf.push(percentCorrect);
-		    	$('#feedback').html("Accuracy: " + Math.round(percentCorrect) + " percent (average must be at least 90%)<br><br>Press space to continue.");
+		    	$('#feedback').html("Accuracy: " + Math.round(percentCorrect) + " percent (average must be at least 95%)<br><br>Press space to continue.");
 		    	$('#feedback').show();
 		    	$(document).bind('keyup.feedback', 'space', function(e) {
 		    		$("#continuousReport").hide();
@@ -1036,7 +1049,7 @@ function FeedbackReport(trialStruct) {
 		console.log(performance);
   		if (memPrac) {
   			if (performance > performanceMin) {
-				$('#average').html("Average Accuracy: " + Math.round(performance) + " percent<br>You may now move on to the next test.<br><br>Press space to continue.");
+				$('#average').html("Awesome!<br>Average Accuracy: " + Math.round(performance) + " percent<br>You may now move on to the next test.<br><br>Press space to continue.");
 				$('#average').show();
 				$(document).bind('keyup.startTrial', 'space', function(e) { 
 			    	$(document).unbind('keyup.startTrial');
@@ -1091,7 +1104,7 @@ function SaveData() {
 	/* Turk assignment id written within URL used 
 	for external Turk submission */
 	$('#assignmentId').val(assignmentId);
-	$("#turkSubmit").attr("action", "https://workersandbox.mturk.com/mturk/externalSubmit?assignmentId="+assignmentId);
+	$("#turkSubmit").attr("action", "https://www.mturk.com/mturk/externalSubmit?assignmentId="+assignmentId);
 
   	var totalTime = new Date() - startExpTime;
   	var newDate = new Date();
@@ -1115,9 +1128,12 @@ function SaveData() {
 }
 
 function StartList() {
-  	$.post("https://mturk.psy.vanderbilt.edu/cgi-bin/startLists.pl",
-    	tags
-    );
+    $.ajax({
+    	type: 'POST',
+    	async: false,
+    	url: 'https://mturk.psy.vanderbilt.edu/cgi-bin/startLists.pl',
+    	data: tags
+    });
 }
 
 /* Send completion indication to the server: */
@@ -1161,7 +1177,6 @@ $(window).ready(function () {
            });
     });
     $('#loading').hide();
-  	StartList();
 });
 
 $(function() {
@@ -1189,17 +1204,17 @@ console.log(screen.height);
 	<a href="http://support.google.com/bin/answer.py?hl=en&answer=23852">here</a><p>
 </noscript>
 
-<div id="test1" class="test"><h2>How to rotate the central line in the display</h2>
+<div id="test1" class="test"><h2>Thank you! </h2>
 	<hr>
 
-	<h1>Thank you! </h1>
+	<h1>How to rotate the central line in the display </h1>
 
-	<p align="center"><img src="static/images/test1.png" style="max-width: 100%;"></p>
+	<p align="center"><img src="static/images/adjust_line_angle.png" style="max-width: 100%;"></p>
 
 	<p> Move the mouse around the fixation point to adjust the angle of the central line, so it matches the angle of the other line. They should be <b>parallel</b>.
 
 	Be as accurate as you can. 
-	To pass this test, <b>your average accuracy must be greater than 90%</b></p>
+	To pass this test, <b>your average accuracy must be greater than 95%</b></p>
 
 	<p style='text-align: center'><a href='javascript:StartExperiment()' id='startExperimentButton' class="nav">Start Practice Trials</a>
 		<div id="loading" style='text-align: center'>
@@ -1213,7 +1228,7 @@ console.log(screen.height);
 <div id="test2" class="test"><h2>Practice:  Memory for 2 items</h2>
 	<hr>
 
-	<p align="center"><img src="static/images/test2.png" style="max-width: 100%;"></p>
+	<p align="center"><img src="static/images/memory_for_2items.png" style="max-width: 100%;"></p>
 
 	<p>Please keep your eyes focused on the central dot throughout each trial, which should take about 4-6 seconds.</p>
 	<p>2 lines will briefly appear in the periphery, too briefly to look at directly, so you will do best if you keep your eyes on the central dot.</p>
@@ -1249,8 +1264,6 @@ console.log(screen.height);
 	<p>This is the actual experiment.
 	Do the best you can!</p>
 
-	<p align="center"><img src="static/images/test3.png" style="max-width: 100%;"></p>
-
 	<p>You will receive a total of 106 trials, which should take about 12 minutes.</p>
 
 	<h1>Reminder:</h1>
@@ -1263,7 +1276,8 @@ console.log(screen.height);
 </div>
 
 <!-- Start form here to capture comments -->
-<form id="turkSubmit" action="https://workersandbox.mturk.com/mturk/externalSubmit" method="post">
+<form id="turkSubmit" action="https://www.mturk.com/mturk/externalSubmit" method="post">
+
 
 <div id="subject" class="page">
 	<h2>Subject Information</h2>
@@ -1364,7 +1378,7 @@ console.log(screen.height);
     <p style='text-align: center'><a href='javascript:ClearAll()' id='clearAllButton' class="nav">Clear All</a>
     <div id="card" class="card">
 	    <div>
-	    Please adjust the bar on the screen using the arrow keys to match the length of a gift card or credit/debit card.
+	    Please adjust the bar on the screen using the arrow keys to match the length of a credit card.
 	    </div>
 	 
 	 	<div style='text-align: center'>
@@ -1374,23 +1388,8 @@ console.log(screen.height);
 	    </div>
     </div>
 
-    <!--
-	<p>Please choose your screen size <b>(in inches)</b> from the options. If your screen size is not one of these options, please provide the size in the other option. Input into "other" as numbers.</p>
-
-	<input id="screenSize" type="radio" name="SS" value="15.6" checked="checked" style="display:none">
-		<p style='text-align: center'>
-			<input type="radio" id="SS11" name="SS" value="11"><label for="SS11"> 11" </label>
-			<input type="radio" id="SS13" name="SS" value="13"><label for="SS13"> 13" </label>
-			<input type="radio" id="SS15" name="SS" value="15"><label for="SS15"> 15" </label>
-			<input type="radio" id="SS21" name="SS" value="21"><label for="SS21"> 21" </label>
-			<input type="radio" id="SS23" name="SS" value="23"><label for="SS23"> 23" </label>
-			<input type="radio" id="SSother" name="SS" value="other"><label for="SSother"> Other</label>
-				<input id="inputother" type="text" onchange="ChangeRadioOther()"/>
-		</p>
-	-->
-
 	<div id="viewD" class="viewD">
-	<p>Please choose your current viewing condition from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
+	<p>Please choose your approximate viewing distance from the diagram. Do <b>NOT</b> select an option if you do not know.</p>
 
 	<input id="viewingDistance" type="radio" name="VD" value="0" checked="checked" style="display:none">
 
@@ -1484,6 +1483,7 @@ console.log(screen.height);
 		<div id="item8" class="array"><img id="gaborShow8" src="static/images/gaborCont.png" class="gabor" width="100"></div>
 	</div>
 	<div id="pressKeyShow" class="botText"><br><br>Press space to begin.</div>
+	<div id="pressKeyBreak" class="botText"><br><br>If needed, take a brief break.<br>Press space to begin again.</div>
 </div>
 
 <!-- Structure for continuous report after the trial: -->
@@ -1504,9 +1504,10 @@ console.log(screen.height);
 		<img src="static/images/gaborCont.png" class="gabor" width="100">
 	</div>
 	<!-- feedback -->
-	<div id="feedback" class="botText">Accuracy: 10 percent (average must be at least 90%)<br><br>Press space to continue.</div>
+	<div id="feedback" class="botText">Accuracy: 10 percent (average must be at least 95%)<br><br>Press space to continue.</div>
 	<div id="average" class="botText">Average Accuracy: 10 percent<br><br>Press space to continue.</div>
 	<div id="pressKeyCont" class="botText"><br><br>Press space to begin.</div>
+	<div id="pressKeySub" class="botText"><br><br>Press space to submit.</div>
 </div>
 
 <div id="questionnaire" class="page">
@@ -1605,7 +1606,7 @@ console.log(screen.height);
 	If you have any questions about this research, you may contact the experimenter:
 	</p>
 
-	<b>tonglab@vanderbilt.edu</b>
+	<b>ftonglab@gmail.com</b>
 
 	<p>
 	To complete the HIT, simply press the button below. Upon pressing the button, the page should refresh to load the next HIT. Even if the next HIT remains loading, it should be noted that this HIT has been submitted.
