@@ -1,28 +1,28 @@
 <html>
 <!-- Title seen on tabs -->
 <title>TongLab: Experiment</title>
-
+<link rel=stylesheet href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" type="text/css">
 <!-- Icon seen on tabs -->
 <link rel="icon" type="image/gif" href="/favicon.gif">
+<!-- Loads all associated style sheets (CSS) -->
+<link rel="stylesheet" type="text/css" href="/css/experiment.css">
+<link rel="stylesheet" type="text/css" href="/css/showTrial.css">
 
 <!-- Background color chosen to match window backgrounds
  and element background colors -->
-<body style="background-color:rgb(128,128,128);margin:0">
+<body style="margin:0">
 <head></head>
 
 <!-- Loads all associated libraries and scripts: noteable
  include jQuery, jQuery Rotate, and TimTurkTools.js -->
 <script src="/lib/jquery-3.0.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src="/lib/jQueryRotate.js"></script>
 <script src="/lib/seedrandom.js"></script>
 <!-- TimTurkTools expanded to allow extraction of HitId
  and statusIndex -->
 <script src="/lib/TimTurkTools.js"></script>
 <script src="/js/utils.js"></script>
-
-<!-- Loads all associated style sheets (CSS) -->
-<link rel="stylesheet" type="text/css" href="/css/experiment.css">
-<link rel="stylesheet" type="text/css" href="/css/showTrial.css">
 
 <style>
 .page {
@@ -148,109 +148,110 @@ console.log("Version 1.2.0");
 1366x768 (16:9), 15.6 inch display (343mm by 193mm), 
 600mm distance from center of screen */
 /* experiment name used in saved data folder name */
-var experimentName = 'pilot';
+let experimentName = 'pilot';
+let parameters = window.opener.parameters;
 /* get Turk identifiers from URL */
-var workerId = GetWorkerId();
-var hitId = GetHitId();
-var assignmentId = GetAssignmentId();
+let workerId = parameters.workerId;
+let hitId = parameters.hitId;
+let assignmentId = parameters.assignmentId;
 /* tags used to keep out external interference of logging files */
-var tags = {
+let tags = {
     	'id': workerId,
     	'experimentName': experimentName,
     	'hitId': hitId,
     	'assignmentId': assignmentId
-    }; 
-var statusIndex = -1;
-var statusStr;
+    };
+let statusIndex = -1;
+let statusStr;
 /* display time of stimulus array */
-var displayTime = 200;
+let displayTime = 200;
 /* length of retention period */
-var isiTime = 1000;
+let isiTime = 1000;
 /* length of time before stimulus 
 display after response */
-var preShowTime = 1500;
+let preShowTime = 1500;
 /* length of time of cue display 
 before response controls */
-var reportShowTime = 500;
+let reportShowTime = 500;
 /* number of trials in actual run, this should 
 match the number within the trial sequence files */
-var numTrials_mPrac = 5;
-var numTrials_prac = 10;
-var numTrials = 106;
-var blockSize = 30;
+let numTrials_mPrac = 5;
+let numTrials_prac = 10;
+let numTrials = 106;
+let blockSize = 30;
 /* set size numbers placed inside */
-var setSize = [1, 2, 3, 6];
+let setSize = [1, 2, 3, 6];
 /* set number of set sizes to variable */
-var numSetSize = setSize.length;
+let numSetSize = setSize.length;
 /* create new Date object to get a time based seed */
-var randTime = new Date();
+let randTime = new Date();
 /* assign seed value to possibly be 
 recorded in data file */
-var randSeed = randTime.getTime();
+let randSeed = randTime.getTime();
 /* startTime variable for recording session times */
-var startExpTime;
-var motorPrac = true;
-var memPrac = true;
+let startExpTime;
+let motorPrac = true;
+let memPrac = true;
 /* determine whether user completed the task
  and should be listed as such on the server */
-var submitted = false;
+let submitted = false;
 
 /* Seed selection based on current date (randTime.getTime()) */
 Math.seedrandom(randSeed);
 
 /* Pregenerated trial arrays */
-var mPracticeTrials = [];
-var memPracticeTrials = [];
+let mPracticeTrials = [];
+let memPracticeTrials = [];
 /* contains practice trial information */
-var practiceTrials = [];
+let practiceTrials = [];
 /* contains processed trial condition information */
-var genTrials = [];
+let genTrials = [];
 /* contains genTrials and practiceTrials */
-var totalTrials = [];
-var testSeq = ['#test2', '#test3', '#actual'];
+let totalTrials = [];
+let testSeq = ['#test2', '#test3', '#actual'];
 
-var mPracPerf = [];
-var blockPerf = [];
+let mPracPerf = [];
+let blockPerf = [];
 
 /* Pointers for where we are in the experiment: */
-var currentTrial_mPrac = -1;
-var currentTrial = -1;
-var currentBlock = 0;
+let currentTrial_mPrac = -1;
+let currentTrial = -1;
+let currentBlock = 0;
 
 /* Default selections for screen size and resolution */
-var horzRes = screen.width;
-var horzLength = 343; // measurements in mm
-var distFromScreen = 600; // measurements in mm
-var centerX = ($(window).width())/2;
-var centerY = ($(window).height())/2;
+let horzRes = screen.width;
+let horzLength = 343; // measurements in mm
+let distFromScreen = 600; // measurements in mm
+let centerX = ($(window).width())/2;
+let centerY = ($(window).height())/2;
 
 /* Pixels per visual angle degree and target image dimension calculations */
-var oppLength = horzLength/2;
-var totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
-var pixelsPerDegree = horzRes/totalVisAngle;
-var itemRadius = Math.floor(pixelsPerDegree);
-var itemDim = 2 * itemRadius;
+let oppLength = horzLength/2;
+let totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
+let pixelsPerDegree = horzRes/totalVisAngle;
+let itemRadius = Math.floor(pixelsPerDegree);
+let itemDim = 2 * itemRadius;
 
 /* Target location within eccentricity values */
 /* minimum angle between element centers to avoid overlap */
-var minAngle_centers = 38;
+let minAngle_centers = 38;
 /* eccentricity distance visual angle */
-var eccenAngle = 4;
-var textAngle = 1;
+let eccenAngle = 4;
+let textAngle = 1;
 /* visual angle conversion */
-var eccenDist = eccenAngle * pixelsPerDegree;
+let eccenDist = eccenAngle * pixelsPerDegree;
 
 /* Target canvas circle offset used 
 with cue selection circle */
-var circMargin = 2;
+let circMargin = 2;
 
 /* Fixation visual angle degrees */
-var outCircle = 0.2432;
-var outLine = 0.0541;
-var inCircle = 0.0541;
+let outCircle = 0.2432;
+let outLine = 0.0541;
+let inCircle = 0.0541;
 
 /* Unit conversions */
-var inchTomm = 25.4;
+let inchTomm = 25.4;
 
 /* --------------------------------------------------------------------------------------- */
 /* ------------------------------------ Window Change ------------------------------------ */
@@ -312,7 +313,7 @@ $(window).on('unload', function(){
 /* --------------------------------------------------------------------------------------- */
 
 function ChangeAgeInput() {
-	var other= document.getElementById("age");
+	let other= document.getElementById("age");
 	other.value=document.getElementById("ageInput").value;
 }
 
@@ -321,9 +322,8 @@ function ChangeAgeInput() {
 /* --------------------------------------------------------------------------------------- */
 
 /* Default selections for screen size and resolution */
-var distFromScreen = 600; // measurements in mm
-var cardLen = 85.6; // measurements in mm
-var barLen = 360;
+let cardLen = 85.6; // measurements in mm
+let barLen = 360;
 
 function SpecsScreen() {
 	$('#subject').hide();
@@ -422,16 +422,16 @@ function canvasStop(e) {
 function visAngleCalc() {
     barRes = barLen;
     
-    var vdValue = $('input[name=VD]:checked').val();
+    let vdValue = $('input[name=VD]:checked').val();
     if (vdValue != "0") {
         /* calculate mm value from vdValue */
         distFromScreen = 10 * (36 + (10 * (vdValue)));
     }
-    var horzRes = screen.width;
-    var horzLength = (horzRes/barRes) * cardLen;
-    var oppLength = horzLength/2;
-    var totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
-    var pixelsPerDegree = horzRes/totalVisAngle;
+    let horzRes = screen.width;
+    let horzLength = (horzRes/barRes) * cardLen;
+    let oppLength = horzLength/2;
+    let totalVisAngle = 2 * convertTo("degs", Math.atan(oppLength/distFromScreen));
+    let pixelsPerDegree = horzRes/totalVisAngle;
     return pixelsPerDegree;
 }
 
@@ -443,8 +443,8 @@ function UpdateElements() {
 	eccenDist = eccenAngle * pixelsPerDegree;
 	$(".gabor").css("width", itemDim);
 
-	var c = document.getElementById("fixationShow");
-	var d = document.getElementById("fixationCont");
+	let c = document.getElementById("fixationShow");
+	let d = document.getElementById("fixationCont");
 	DrawFixation(c);
 	DrawFixation(d);
 
@@ -476,28 +476,29 @@ function ApplySpecs() {
 /* ------------------------------------ Motor Practice ----------------------------------- */
 /* --------------------------------------------------------------------------------------- */
 
-var mPracCycles = 0;
+let mPracCycles = 0;
 
 function MotorPractice() {
 	$('#test1').hide();
+	$(body).css('background-color', rgb(128,128,128));
 	mPracticeTrials = mPracticeGen();
 	mPracNext();
 }
 
 function mPracticeGen() {
 
-	var numTargets = 1;
-	var prac = 1;
-	var stimtype = 1;
+	let numTargets = 1;
+	let prac = 1;
+	let stimtype = 1;
 
-	var genStruct = [];
-	var itemOrients = [];
-	var curAngles = [];
-	var curCoordinates = [];
-	var target;
-	var startAngle;
+	let genStruct = [];
+	let itemOrients = [];
+	let curAngles = [];
+	let curCoordinates = [];
+	let target;
+	let startAngle;
 
-	for (var i=0; i<numTrials_mPrac; i++) {
+	for (let i=0; i<numTrials_mPrac; i++) {
 		startAngle = Math.floor(Math.random()*360);
 	    itemOrients.push(Math.floor(Math.random()*360));
 	    curAngles = randSpacings(numTargets, startAngle);
@@ -560,11 +561,11 @@ function PracProgress(trialStruct) {
 }
 
 function mPracticeFeedbackReport() {
-	var perfSum = 0;
-	var performanceMin = 95;
-	var performance;
+	let perfSum = 0;
+	let performanceMin = 95;
+	let performance;
 	mPracCycles++;
-	for (var i = 0; i<mPracPerf.length; i++) {
+	for (let i = 0; i<mPracPerf.length; i++) {
 		perfSum += mPracPerf[i];
 	}
 	performance = perfSum/mPracPerf.length;
@@ -599,18 +600,18 @@ function mPracticeFeedbackReport() {
 
 function memPracticeGen() {
 
-	var memPracNumTrials = 5;
-	var test2SS = 2;
-	var stimtype = 1;
-	var startAngle;
-	var itemOrients = [];
-	var curAngles = [];
-	var curCoordinates = [];
-	var targetIndex;
+	let memPracNumTrials = 5;
+	let test2SS = 2;
+	let stimtype = 1;
+	let startAngle;
+	let itemOrients = [];
+	let curAngles = [];
+	let curCoordinates = [];
+	let targetIndex;
 
-	for (var j = 0; j<memPracNumTrials; j++) {
+	for (let j = 0; j<memPracNumTrials; j++) {
 		startAngle = Math.floor(Math.random()*360);
-	    for (var k=0; k<test2SS; k++) {
+	    for (let k=0; k<test2SS; k++) {
 	        itemOrients.push(Math.floor(Math.random()*360));
 	    }
 	    curAngles = randSpacings(test2SS, startAngle);
@@ -646,29 +647,29 @@ function showInstruct() {
 }
 
 function OpenStatus() {
-	var listRequest = new XMLHttpRequest();
+	let listRequest = new XMLHttpRequest();
 	listRequest.onreadystatechange = function() {
 		if((listRequest.readyState === 4) && (listRequest.status === 200)) {
 			statusStr = JSON.parse(listRequest.responseText);
-			for (var i = 0; i < statusStr.length; i++) {
+			for (let i = 0; i < statusStr.length; i++) {
 				if (statusStr[i] == 0) {
 					statusIndex = i;
 					break;
 				}
 			}
 		}
-	}
+	};
 	listRequest.open('GET', 'conditions/status.txt', false);
 	listRequest.send();
 }
 
 function OpenParticipants() {
-	var repeat = false;
-	var partRequest = new XMLHttpRequest();
+	let repeat = false;
+	let partRequest = new XMLHttpRequest();
 	partRequest.onreadystatechange = function() {
 		if((partRequest.readyState === 4) && (partRequest.status === 200)) {
 			partStr = JSON.parse(partRequest.responseText);
-			for (var i = 0; i < partStr.length; i++) {
+			for (let i = 0; i < partStr.length; i++) {
 				if (partStr[i][0] == workerId) {
 					statusIndex = i;
 					repeat = true;
@@ -685,7 +686,7 @@ function OpenParticipants() {
 }
 
 function AdjustElements(trialStruct) {
-	for (var i=0; i<trialStruct.setSize; i++) {
+	for (let i=0; i<trialStruct.setSize; i++) {
 		$('#item' + (i+1)).css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[i].y - itemDim);
 		$('#item' + (i+1)).css("left", $(window).width()/2 + trialStruct.randSpacings[i].x);
 	}
@@ -696,7 +697,7 @@ function AdjustElements(trialStruct) {
 function DrawFixation(element) {
 	element.width = itemDim;
 	element.height = itemDim;
-	var ctx = element.getContext("2d");
+	let ctx = element.getContext("2d");
 	ctx.beginPath();
 	//ctx.arc(itemRadius,itemRadius,eccenDist,0,2*Math.PI);
 	ctx.arc(itemRadius,itemRadius,outCircle * pixelsPerDegree,0,2*Math.PI);
@@ -718,14 +719,14 @@ function ChangeToGabor() {
 }
 
 function ReadConditions() {
-	var fileNum;
-	var subjID = statusIndex + 1;
-	var statusIndexStr = pad(subjID, 3);
+	let fileNum;
+	let subjID = statusIndex + 1;
+	let statusIndexStr = pad(subjID, 3);
 	console.log(statusIndexStr);
 
-	var pracfileLoc = 'conditions/CounterBalance_prac/bar_SS6_10display_subj' + statusIndexStr + '.txt';
+	let pracfileLoc = 'conditions/CounterBalance_prac/bar_SS6_10display_subj' + statusIndexStr + '.txt';
 	console.log(pracfileLoc);
-	var pracDataRequest = new XMLHttpRequest();
+	let pracDataRequest = new XMLHttpRequest();
 	pracDataRequest.onreadystatechange = function() {
 		if((pracDataRequest.readyState === 4) && (pracDataRequest.status === 200)) {
 			conditions = pracDataRequest.responseText;
@@ -735,8 +736,8 @@ function ReadConditions() {
 	pracDataRequest.open('GET', pracfileLoc, true);
 	pracDataRequest.send();
 
-	var fileLoc = 'conditions/CounterBalance/bar_SS6_96display_subj' + statusIndexStr + '.txt';
-	var dataRequest = new XMLHttpRequest();
+	let fileLoc = 'conditions/CounterBalance/bar_SS6_96display_subj' + statusIndexStr + '.txt';
+	let dataRequest = new XMLHttpRequest();
 	dataRequest.onreadystatechange = function() {
 		if((dataRequest.readyState === 4) && (dataRequest.status === 200)) {
 			conditions = dataRequest.responseText;
@@ -748,21 +749,21 @@ function ReadConditions() {
 }
 
 function ProcessConditions(trialStruct, structNum) {
-	var subjID;
-	var prac;
-	var trial;
-	var stimtype;
-	var setsize;
-	var displayID;
-	var target;
-	var itemOrients = [];
-	var curAngles = [];
-	var curCoordinates = [];
+	let subjID;
+	let prac;
+	let trial;
+	let stimtype;
+	let setsize;
+	let displayID;
+	let target;
+	let itemOrients = [];
+	let curAngles = [];
+	let curCoordinates = [];
 
 	conditionStream = conditions.split(/\s+/);
 	console.log(conditionStream);
 	numValuesPerTrial = (conditionStream.length - 1)/structNum
-	for (var i = 0; i < structNum; i++) {
+	for (let i = 0; i < structNum; i++) {
 		subjID = parseFloat(conditionStream[i * numValuesPerTrial]);
 		prac = parseFloat(conditionStream[i * numValuesPerTrial + 1]);
 		trial = parseFloat(conditionStream[i * numValuesPerTrial + 2]);
@@ -770,7 +771,7 @@ function ProcessConditions(trialStruct, structNum) {
 		setsize = parseFloat(conditionStream[i * numValuesPerTrial + 4]);
 		displayID = parseFloat(conditionStream[i * numValuesPerTrial + 5]);
 		target = parseFloat(conditionStream[i * numValuesPerTrial + 6]) - 1;
-		for (var j = 0; j < setsize; j++) {
+		for (let j = 0; j < setsize; j++) {
 			itemOrients[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 7]);
 			curAngles[j] = parseFloat(conditionStream[(i * numValuesPerTrial) + j + 13]);
 		}
@@ -795,10 +796,10 @@ function ProcessConditions(trialStruct, structNum) {
 
 /* Normalize random spacing values to sum to available space */
 function randSpacings(nItems, startAngle) {
-	var curSpacings = [];
-	var curCoordinates = [];
-	var availableSpace;
-	var curRandSum = 0;
+	let curSpacings = [];
+	let curCoordinates = [];
+	let availableSpace;
+	let curRandSum = 0;
 			
 	availableSpace = 360 - (minAngle_centers * nItems);
 	for(i = 0; i<nItems; i++) {
@@ -814,7 +815,7 @@ function randSpacings(nItems, startAngle) {
 
 /* Convert spacing angles to x, y coordinates for element placement */
 function toCoordinates(angleSpacings) {
-	var curCoordinates = [];
+	let curCoordinates = [];
 	angleSpacings = wrap(angleSpacings);
 	for(i = 0; i<angleSpacings.length; i++) {
 		coordX = Math.floor(Math.cos(convertTo("rads", angleSpacings[i])) * eccenDist) - itemRadius;
@@ -873,7 +874,7 @@ function SetItems(trialStruct) {
 	if (trialStruct.stimtype == 2) {
 		ChangeToGabor();
 	}
-	for (var i=0; i<trialStruct.setSize; i++) {
+	for (let i=0; i<trialStruct.setSize; i++) {
 		placeGabor('#item' + (i+1), i, trialStruct);
 		$('#item' + (i+1)).show();
 	}
@@ -930,7 +931,7 @@ function ShowTrial(trialStruct) {
 }
 
 /* Always track the mouse */
-var mouseX, mouseY;
+let mouseX, mouseY;
 $(function() {
   	$(document).bind('mousemove.overall', function(e) {
     	mouseX = e.pageX;
@@ -939,7 +940,7 @@ $(function() {
 });
 
 function ReportSelection(trialStruct) {
-	var targetIndex = trialStruct.targetIndex;
+	let targetIndex = trialStruct.targetIndex;
 	console.log(targetIndex);
 	console.log(trialStruct.randSpacings[targetIndex]);
 	$("#targetSelect").width(itemDim + 2 * circMargin);
@@ -947,10 +948,10 @@ function ReportSelection(trialStruct) {
 	$("#targetSelect").css("left", $(window).width()/2 + trialStruct.randSpacings[targetIndex].x - circMargin);
 	$("#targetSelect").css("top", $("#showTrial").height()/2 - trialStruct.randSpacings[targetIndex].y - itemDim - circMargin);
 
-	var c = document.getElementById("circSelect");
+	let c = document.getElementById("circSelect");
 	c.width = itemDim + 2 * circMargin;
 	c.height = itemDim + 2 * circMargin;
-	var ctx = c.getContext("2d");
+	let ctx = c.getContext("2d");
 
 	ctx.beginPath();
 	ctx.arc(c.width/2,c.height/2,itemRadius,0,2*Math.PI);
@@ -961,11 +962,11 @@ function ReportSelection(trialStruct) {
 /* Handle continuous report for either bar or grating response by using a single
    image with jQuery rotation based on mouse coordinate angle */
 function ShowContinuousReport(trialStruct) {
-  	var angleDeg = 0;
-  	var randAdj = 360 * Math.random();
+  	let angleDeg = 0;
+  	let randAdj = 360 * Math.random();
   	// console.log(randAdj);
-  	var curError = 360;
-  	var startTime = new Date();
+  	let curError = 360;
+  	let startTime = new Date();
 
   	if (!motorPrac) {
   		ReportSelection(trialStruct);
@@ -978,15 +979,15 @@ function ShowContinuousReport(trialStruct) {
 	  		$("#pressKeySub").show();
 	  	}
   		$(document).bind('keyup.curTrial', 'space', function(e) {
-			var answer = wrap(360 - (angleDeg + randAdj));
+			let answer = wrap(360 - (angleDeg + randAdj));
 			trialStruct.reportedAngle = Math.round(answer);
 	    	trialStruct.rt = (new Date()) - startTime;
 		    $(document).unbind('keyup.curTrial');
 		    $(document).unbind('mousemove.curTrial');
 		    
-		    var difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
-		    var oriDiff = Math.abs((difference%180)-90);
-		    var percentCorrect = (oriDiff/90) * 100;
+		    let difference = Math.abs(trialStruct.items[trialStruct.targetIndex] - trialStruct.reportedAngle);
+		    let oriDiff = Math.abs((difference%180)-90);
+		    let percentCorrect = (oriDiff/90) * 100;
 		    console.log(percentCorrect);
 
 		    $("#continuousStimulus").hide();
@@ -1014,10 +1015,10 @@ function ShowContinuousReport(trialStruct) {
   	}, reportShowTime);
 
 	$(document).bind('mousemove.curTrial', function(e) {
-		var initOffset = $('#continuousReport').offset(); 
-	   	var relX = e.pageX - centerX;
-	  	var relY = e.pageY - centerY;
-		var curAngle = Math.atan2(relY,relX);
+		let initOffset = $('#continuousReport').offset();
+	   	let relX = e.pageX - centerX;
+	  	let relY = e.pageY - centerY;
+		let curAngle = Math.atan2(relY,relX);
 		
 		angleDeg = (curAngle / Math.PI * 180.0);
 	    angleDeg = (angleDeg < 0) ? angleDeg+360:angleDeg;
@@ -1039,10 +1040,10 @@ function FeedbackReport(trialStruct) {
 	$("#targetSelect").hide();
 	$("#continuousReport").show();
   	if(currentTrial == totalTrials[currentBlock].length - 1) {
-  		var perfSum = 0;
-  		var performanceMin = 80;
-		var performance;
-		for (var i = 0; i<totalTrials[currentBlock].length; i++) {
+  		let perfSum = 0;
+  		let performanceMin = 80;
+		let performance;
+		for (let i = 0; i<totalTrials[currentBlock].length; i++) {
 			perfSum += blockPerf[i];
 		}
 		performance = perfSum/totalTrials[currentBlock].length;
@@ -1106,9 +1107,9 @@ function SaveData() {
 	$('#assignmentId').val(assignmentId);
 	$("#turkSubmit").attr("action", "https://www.mturk.com/mturk/externalSubmit?assignmentId="+assignmentId);
 
-  	var totalTime = new Date() - startExpTime;
-  	var newDate = new Date();
-  	var curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " + 
+  	let totalTime = new Date() - startExpTime;
+  	let newDate = new Date();
+  	let curID = (IsOnTurk())? GetAssignmentId() : prompt("Doesn't look like you " +
   	"are on Turk, so you're probably testing. Enter an ID to save your data with:", "id");
   	d = { 
 	    "curID": curID,
@@ -1149,7 +1150,7 @@ function CompleteList() {
 
 /* Send the data to the server as JSON: */
 function SendToServer(id, curData) {
-  	var dataToServer = {
+  	let dataToServer = {
     	'id': id,
     	'experimentName': experimentName,
     	'curData': JSON.stringify(curData)
@@ -1363,7 +1364,7 @@ console.log(screen.height);
     <div class="instructionsnav">
         <div class="row">
             <div>
-                <button type="button" id="subject" value="subject" class="nav" onClick="SpecsScreen();">
+                <button type="button" id="subjectBtn" value="subject" class="nav" onClick="SpecsScreen();">
                     Continue
                 </button>
             </div>
@@ -1430,7 +1431,7 @@ console.log(screen.height);
     <div id="cardNext" class="card">
         <div class="row">
             <div>
-                <button type="button" id="cardNext" value="cardNext" class="nav" onClick="CardNext();">
+                <button type="button" id="cardNextBtn" value="cardNext" class="nav" onClick="CardNext();">
                     Continue
                 </button>
             </div>
@@ -1440,7 +1441,7 @@ console.log(screen.height);
 	<div id="SpecsBack" class="card">
         <div class="row">
             <div>
-                <button type="button" id="specsBack" value="specsBack" class="nav" onClick="SpecsBack();">
+                <button type="button" id="specsBackBtn" value="specsBack" class="nav" onClick="SpecsBack();">
                     Back
                 </button>
             </div>
@@ -1460,7 +1461,7 @@ console.log(screen.height);
     <div id="cardBack" class="viewD">
         <div class="row">
             <div>
-                <button type="button" id="cardBack" value="cardBack" class="nav" onClick="CardBack();">
+                <button type="button" id="cardBackBtn" value="cardBack" class="nav" onClick="CardBack();">
                     Back
                 </button>
             </div>
