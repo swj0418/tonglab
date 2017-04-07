@@ -1,10 +1,10 @@
 function GetWorkerId() {
-	var workerId = turkGetParam( 'workerId', 'NONE' );
+	let workerId = turkGetParam( 'workerId', 'NONE' );
 	return workerId;
 }	
 
 function GetStatusIndex() {
-	var statusIndex = turkGetParam( 'statusIndex', 'NONE' );
+	let statusIndex = turkGetParam( 'statusIndex', 'NONE' );
 	return statusIndex;
 }	
 
@@ -23,15 +23,16 @@ function IsOnTurk() {
 }
 
 function GetHitId() {
-	var hitId = turkGetParam( 'hitId', 'NONE' );
+	let hitId = turkGetParam( 'hitId', 'NONE' );
 	return hitId;
 }	
 
 function GetAssignmentId() {
-	var assignmentId = turkGetParam( 'assignmentId', 'NONE' );
+	let assignmentId = turkGetParam( 'assignmentId', 'NONE' );
 	return assignmentId;
 }	
 
+/*
 // Check if this worker's actual ID is on the block list or not
 function CheckBlockList(blockListName, funcForBlocked) {
 	if (!IsTurkPreview()) {
@@ -53,17 +54,18 @@ function CheckBlockList(blockListName, funcForBlocked) {
 		});
 	}
 }
+*/
 
 function RandomOrder(num) {
-  var order = new Array();
-  for (var i=0; i<num; i++) { 
+  let order = new Array();
+  for (let i=0; i<num; i++) {
     order.push(i); 
   }
   return Shuffle(order);
 }
 
 Shuffle = function(o) { 
-	for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+	for(let j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
 	return o;
 };
 
@@ -80,10 +82,10 @@ Date.prototype.timeNow = function(){
  * Gets a URL parameter from the query string
  */
 function turkGetParam( name, defaultValue ) { 
-   var regexS = "[\?&]"+name+"=([^&#]*)"; 
-   var regex = new RegExp( regexS ); 
-   var tmpURL = window.location.href; 
-   var results = regex.exec( tmpURL ); 
+   let regexS = "[\?&]"+name+"=([^&#]*)";
+   let regex = new RegExp( regexS );
+   let tmpURL = window.location.href;
+   let results = regex.exec( tmpURL );
    if( results == null ) { 
      return defaultValue; 
    } else { 
@@ -94,24 +96,28 @@ function turkGetParam( name, defaultValue ) {
 /**
  * URL decode a parameter
  */
+/*
 function decode(strToDecode)
 {
-  var encoded = strToDecode;
+  let encoded = strToDecode;
   return unescape(encoded.replace(/\+/g,  " "));
 }
+*/
 
 
 /**
  * Returns the Mechanical Turk Site to post the HIT to (sandbox. prod)
  */
+/*
 function turkGetSubmitToHost() {
   return decode(turkGetParam("turkSubmitTo", "https://www.mturk.com"));
 }
-
+*/
 
 /**
  * Sets the assignment ID in the form. Defaults to use mturk_form and submitButton
- */ 
+ */
+/*
 function turkSetAssignmentID( form_name, button_name ) {
 
   if (form_name == null) {
@@ -139,7 +145,7 @@ function turkSetAssignmentID( form_name, button_name ) {
      form.action = turkGetSubmitToHost() + "/mturk/externalSubmit"; 
   }
 }
-
+*/
 
 
 /*
@@ -153,7 +159,7 @@ function turkSetAssignmentID( form_name, button_name ) {
  * Original idea by:
  * Binny V A, http://www.openjs.com/scripts/events/keyboard_shortcuts/
 */
-
+/*
 (function(jQuery){
 
 	jQuery.hotkeys = {
@@ -182,7 +188,7 @@ function turkSetAssignmentID( form_name, button_name ) {
 			return;
 		}
 
-		var origHandler = handleObj.handler,
+		let origHandler = handleObj.handler,
 			keys = handleObj.data.toLowerCase().split(" ");
 
 		handleObj.handler = function( event ) {
@@ -193,7 +199,7 @@ function turkSetAssignmentID( form_name, button_name ) {
 			}
 
 			// Keypress represents characters, not special keys
-			var special = event.type !== "keypress" && jQuery.hotkeys.specialKeys[ event.which ],
+			let special = event.type !== "keypress" && jQuery.hotkeys.specialKeys[ event.which ],
 				character = String.fromCharCode( event.which ).toLowerCase(),
 				key, modif = "", possible = {};
 
@@ -228,7 +234,7 @@ function turkSetAssignmentID( form_name, button_name ) {
 				}
 			}
 
-			for ( var i = 0, l = keys.length; i < l; i++ ) {
+			for ( let i = 0, l = keys.length; i < l; i++ ) {
 				if ( possible[ keys[i] ] ) {
 					return origHandler.apply( this, arguments );
 				}
@@ -241,9 +247,4 @@ function turkSetAssignmentID( form_name, button_name ) {
 	});
 
 })( jQuery );
-
-
-    
-
-
-    
+*/

@@ -20,42 +20,10 @@
 	<title>TongLab: Turk</title>
 	<link rel=stylesheet href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" type="text/css">
 	<link rel="icon" type="image/gif" href="/favicon.gif">
-	<style>
-		/* these tyles need to be defined locally */
-		body {
-			padding:0px;
-			margin: 0px;
-			background-color: white;
-			color: black;
-			font-weight: 300;
-			font-size: 13pt;
-		}
-
-		.container {
-			padding: 10%;
-			padding-top: 8%;
-			background: white;
-		}
-
-		#preview {
-			display: none;
-		}
-
-		#error {
-			display: none;
-		}
-
-		#full {
-			display: none;
-		}
-
-		.img-responsive {
-			float:none;
-		}
-
-	</style>
+	<link rel=stylesheet href="/css/preview.css" type="text/css">
 	<script src="/lib/jquery-3.0.0.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="/js/preview.js"></script>
 	<script src="/lib/TimTurkTools.js"></script>
 	<body>
 		<div class="container">
@@ -134,44 +102,9 @@
 							Sorry, our records indicate that you have attempted to complete this HIT, but quit before finishing. Because this is a Psychology experiment, you can only complete this HIT once. Please return the HIT so someone else can perform the experiment.
 						</p>
 					</div>
-
-					<div id="full">
-						<!--
-								FULL
-								If the status file lists all trial sequences to be in use, this message will be shown to users.
-							-->
-						<h1>Sorry, there was an error</h1>
-						<p>
-							Sorry, all current experiment condition sequences are listed to be in use. While there may be a conditions file available, we are not able to know whether another participant has returned a HIT until they have not completed by the HIT expiration time. While our servers should refresh an availability, this can take up to 2 hours.
-						</p>
-					</div>
 				</div>
 			</div>
 		</div>
-
-
-		<script>
-            let hitId = GetHitId();
-            let workerId = GetWorkerId();
-            let assignmentId = GetAssignmentId();
-
-			var parameters = {
-			    'hitId': hitId,
-				'workerId': workerId,
-				'assignmentId': assignmentId
-			};
-
-			console.log(parameters);
-
-			function openwindow() {
-				let expWindow = window.open('/exp.html');
-			}
-			
-			if (IsOnTurk() && IsTurkPreview()) {
-				$("#accepted").hide();
-				$("#preview").show();
-			}
-		</script>
 
 		<noscript>
 			<h1>Warning: Javascript seems to be disabled</h1>

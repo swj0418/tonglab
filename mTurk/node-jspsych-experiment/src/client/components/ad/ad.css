@@ -1,0 +1,17 @@
+body {
+    padding:0px;
+    margin: 0px;
+    background-color: white;
+    color: black;
+    font-weight: 300;
+    font-size: 13pt;
+}
+
+.container {
+    padding: 5%;
+    padding-top: 4%;
+}
+
+.img-responsive {
+    float:none;
+}
